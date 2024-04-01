@@ -3,7 +3,7 @@ Data Science Workflows with Posit Tools — Python Focus
 
 ### posit::conf(2024)
 
-by INSTRUCTOR_NAME
+by Gagandeep Singh, Sam Edwardes
 
 -----
 
