@@ -1,4 +1,4 @@
-WORKSHOP_TITLE
+Data Science Workflows with Posit Tools — Python Focus
 ================
 
 ### posit::conf(2024)
