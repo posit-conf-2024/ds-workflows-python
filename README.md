@@ -29,7 +29,14 @@ This workshop is for you if you...
 
 ## Prework
 
-No prework is required for this workshop.
+- [ ] Get an access code for the <https://wsdot.wa.gov/traffic/api/> API. Make sure to save your access code!
+
+<details>
+<summary>Expand to see screenshot of how to get the access code.</summary>
+
+![Get the access code for the wsdot API](website/images/wsdot-access-token.png)
+
+</details>
 
 ## Schedule
 
