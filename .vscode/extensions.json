@@ -1,0 +1,17 @@
+{
+    "recommendations": [
+        "streetsidesoftware.code-spell-checker",
+        "sleistner.vscode-fileutils",
+        "mhutchie.git-graph",
+        "njpwerner.autodocstring",
+        "ms-toolsai.jupyter",
+        "chrisdias.vscode-opennewinstance",
+        "alefragnani.project-manager",
+        "ms-python.python",
+        "kevinrose.vsc-python-indent",
+        "quarto.quarto",
+        "charliermarsh.ruff",
+        "posit.shiny-python",
+        "mtxr.sqltools"
+    ]
+}
