@@ -1,47 +1,35 @@
 Data Science Workflows with Posit Tools — Python Focus
 ================
 
-### posit::conf(2024)
+## posit::conf(2024)
 
 by Gagandeep Singh, Sam Edwardes
 
 -----
 
-INSTRUCTIONS FOR INSTRUCTORS: Please insert information about your
-workshop below. Then, add workshop content in the materials folder and
-link to each session’s materials from the schedule below. You are
-welcomed to add more rows to the schedule. We just ask that you take
-breaks at the specified times. Once you are done adding information, you
-can remove these instructions from the README.
-
-Alternatively, you can completely redo the organization of this repo 
-as a Quarto website or some other format you prefer to host your workshop
-materials. The only requirement is that your workshop materials are hosted 
-here.
-
------
-
-:spiral_calendar: August 12, 2024  
-:alarm_clock:     09:00 - 17:00  
-:hotel:           ROOM TBD  
+:spiral_calendar: August 12, 2024
+:alarm_clock:     09:00 - 17:00
+:hotel:           ROOM TBD
 :writing_hand:    [pos.it/conf](http://pos.it/conf)
 
 -----
 
 ## Description
 
-ADD DESCRIPTION
+In this Python-focused workshop, we will discuss ways to improve your data science workflows! During the course, we will review packages for data validation, alerting, modeling, and more. We’ll use Posit’s open source and professional tools to string all the pieces together for an efficient workflow. We’ll discuss environments, managing deployed content, working with databases, and interoperability across data products.
 
 ## Audience
 
-ADD AUDIENCE INFO
+This workshop is for you if you...
+
+- Build finished data products starting from raw data and are looking to improve your workflow
+- Are looking to expand your knowledge of Posit open source and professional tools
+- Want to improve interoperability between data products in your work or on your team
+- Have experience developing in Python. An analogous course with an R focus is also offered
 
 ## Prework
 
-ADD INFORMATION YOU WANT LEARNERS TO HAVE / STEPS THEY WANT THEM TO
-COMPLETE PRIOR TO THE WORKSHOP. THIS COULD BE A LINK TO A THREAD ON
-RSTUDIO COMMUNITY, PACKAGE INSTALL INSTRUCTIONS, HOW TO GET AN
-RSTUDIO.CLOUD ACCOUNT, ETC.
+No prework is required for this workshop.
 
 ## Schedule
 
@@ -55,9 +43,21 @@ RSTUDIO.CLOUD ACCOUNT, ETC.
 | 15:00 - 15:30 | *Coffee break*   |
 | 15:30 - 17:00 | Session 4        |
 
-## Instructor(s)
+## Instructors
 
-ADD INSTRUCTOR(S) BIO
+**Gagandeep Singh**
+
+Gagandeep is a Solutions Engineer at Posit PBS based in Toronto, Canada. He is a former software engineer and data scientist who has worked in a variety of cross-technology teams before joining Posit.
+
+- https://github.com/gsingh91
+
+**Sam Edwardes**
+
+Sam is a Solutions Engineer at Posit PBC based out of Vancouver, British Columbia, Canada. As a Solutions Engineer he helps customers effectively use Posit's professional products with open source Python and R tools. He is passionate about Python, R, and all things open source!
+
+- https://github.com/SamEdwardes
+- https://fosstodon.org/@SamEdwardes
+- https://www.linkedin.com/in/samedwardes/
 
 -----
 
