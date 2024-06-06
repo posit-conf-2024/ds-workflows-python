@@ -11,7 +11,7 @@
         "kevinrose.vsc-python-indent",
         "quarto.quarto",
         "charliermarsh.ruff",
-        "posit.shiny-python",
-        "mtxr.sqltools"
+        "mtxr.sqltools",
+        "posit.shiny"
     ]
 }

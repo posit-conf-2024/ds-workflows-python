@@ -1,0 +1,12 @@
+ipykernel==6.29.4
+polars==0.20.24
+httpx==0.27.0
+rsconnect-python==1.23.0
+python-dotenv==1.0.1
+rich==13.7.1
+pins==0.8.6
+pyarrow==16.0.0
+pandera==0.19.3
+matplotlib==3.9.0
+# Jupyter is used for rendering the notebook with quarto.
+jupyter==1.0.0
