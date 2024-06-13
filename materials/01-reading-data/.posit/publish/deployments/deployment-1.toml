@@ -7,7 +7,7 @@ created_at = '2024-06-05T16:58:58-07:00'
 type = 'jupyter-notebook'
 configuration_name = 'configuration-1'
 id = 'a75f890f-6cb4-4a9e-8a82-9f38bdfc050a'
-deployed_at = '2024-06-13T11:11:30-07:00'
+deployed_at = '2024-06-13T11:19:04-07:00'
 bundle_id = '549804'
 bundle_url = 'https://connect.posit.it/__api__/v1/content/a75f890f-6cb4-4a9e-8a82-9f38bdfc050a/bundles/549804/download'
 dashboard_url = 'https://connect.posit.it/connect/#/apps/a75f890f-6cb4-4a9e-8a82-9f38bdfc050a'
@@ -187,6 +187,15 @@ requirements = [
   'zipp==3.18.1',
   '    # via importlib-metadata'
 ]
+
+[deployment_error]
+code = 'deployFailed'
+message = 'An error occurred while running your content. (Error code: render-python-code-error)'
+operation = 'publish/runContent'
+
+[deployment_error.data]
+ConnectErrorCode = 'render-python-code-error'
+DocumentationLink = 'https://docs.posit.co/connect/user/troubleshooting/#render-python-code-error'
 
 [configuration]
 '$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json'
