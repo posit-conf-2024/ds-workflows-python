@@ -7,7 +7,7 @@ entrypoint = 'notebook.ipynb'
 validate = true
 has_parameters = false
 files = ['*', '!.env', '!.gitignore']
-title = 'Seattle Ferries - Raw data'
+title = 'Seattle Ferries #1 - Raw data'
 
 [python]
 version = '3.12.2'

@@ -6,3 +6,4 @@ python-dotenv==1.0.1
 rich==13.7.1
 pins==0.8.6
 pyarrow==16.0.0
+hishel==0.0.27

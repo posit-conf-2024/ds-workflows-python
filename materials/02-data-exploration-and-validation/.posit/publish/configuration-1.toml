@@ -7,7 +7,7 @@ entrypoint = 'notebook.ipynb'
 validate = true
 has_parameters = false
 files = ['*', '!.env', '!.vscode/settings.json']
-title = 'Seattle Ferries - Data exploration and validation'
+title = 'Seattle Ferries #2 - Data exploration and validation'
 
 [python]
 version = '3.12.2'

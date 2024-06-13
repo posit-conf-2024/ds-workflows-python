@@ -2,19 +2,20 @@
 '$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v3.json'
 server_type = 'connect'
 server_url = 'https://connect.posit.it'
-client_version = '1.0.alpha8-68-g8ef16bac'
+client_version = '1.0.beta1'
 created_at = '2024-06-05T16:58:58-07:00'
 type = 'jupyter-notebook'
 configuration_name = 'configuration-1'
 id = 'a75f890f-6cb4-4a9e-8a82-9f38bdfc050a'
-deployed_at = '2024-06-11T14:33:00-07:00'
-bundle_id = '548839'
-bundle_url = 'https://connect.posit.it/__api__/v1/content/a75f890f-6cb4-4a9e-8a82-9f38bdfc050a/bundles/548839/download'
+deployed_at = '2024-06-13T11:19:04-07:00'
+bundle_id = '549804'
+bundle_url = 'https://connect.posit.it/__api__/v1/content/a75f890f-6cb4-4a9e-8a82-9f38bdfc050a/bundles/549804/download'
 dashboard_url = 'https://connect.posit.it/connect/#/apps/a75f890f-6cb4-4a9e-8a82-9f38bdfc050a'
 direct_url = 'https://connect.posit.it/content/a75f890f-6cb4-4a9e-8a82-9f38bdfc050a'
 files = [
   '.posit/publish/configuration-1.toml',
   '.posit/publish/deployments/deployment-1.toml',
+  '.vscode/settings.json',
   'notebook.ipynb',
   'requirements.in',
   'requirements.txt'
@@ -45,13 +46,14 @@ requirements = [
   '    # via ipython',
   'executing==2.0.1',
   '    # via stack-data',
-  'fsspec==2024.3.1',
+  'fsspec==2024.6.0',
   '    # via pins',
   'h11==0.14.0',
   '    # via httpcore',
   'httpcore==1.0.5',
   '    # via httpx',
   'httpx==0.27.0',
+  '    # via -r requirements.in',
   'humanize==4.9.0',
   '    # via pins',
   'idna==3.7',
@@ -64,6 +66,7 @@ requirements = [
   'importlib-resources==6.4.0',
   '    # via pins',
   'ipykernel==6.29.4',
+  '    # via -r requirements.in',
   'ipython==8.24.0',
   '    # via ipykernel',
   'jedi==0.19.1',
@@ -103,11 +106,13 @@ requirements = [
   'pexpect==4.9.0',
   '    # via ipython',
   'pins==0.8.6',
+  '    # via -r requirements.in',
   'pip==24.0',
   '    # via rsconnect-python',
   'platformdirs==4.2.1',
   '    # via jupyter-core',
   'polars==0.20.24',
+  '    # via -r requirements.in',
   'prompt-toolkit==3.0.43',
   '    # via ipython',
   'psutil==5.9.8',
@@ -117,6 +122,7 @@ requirements = [
   'pure-eval==0.2.2',
   '    # via stack-data',
   'pyarrow==16.0.0',
+  '    # via -r requirements.in',
   'pygments==2.18.0',
   '    # via',
   '    #   ipython',
@@ -128,6 +134,7 @@ requirements = [
   '    #   jupyter-client',
   '    #   pandas',
   'python-dotenv==1.0.1',
+  '    # via -r requirements.in',
   'pytz==2024.1',
   '    # via pandas',
   'pyyaml==6.0.1',
@@ -139,7 +146,9 @@ requirements = [
   'requests==2.31.0',
   '    # via pins',
   'rich==13.7.1',
+  '    # via -r requirements.in',
   'rsconnect-python==1.23.0',
+  '    # via -r requirements.in',
   'semver==2.13.0',
   '    # via rsconnect-python',
   'six==1.16.0',
@@ -179,6 +188,15 @@ requirements = [
   '    # via importlib-metadata'
 ]
 
+[deployment_error]
+code = 'deployFailed'
+message = 'An error occurred while running your content. (Error code: render-python-code-error)'
+operation = 'publish/runContent'
+
+[deployment_error.data]
+ConnectErrorCode = 'render-python-code-error'
+DocumentationLink = 'https://docs.posit.co/connect/user/troubleshooting/#render-python-code-error'
+
 [configuration]
 '$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json'
 type = 'jupyter-notebook'
@@ -186,7 +204,7 @@ entrypoint = 'notebook.ipynb'
 validate = true
 has_parameters = false
 files = ['*', '!.env', '!.gitignore']
-title = 'Seattle Ferries - Raw data'
+title = 'Seattle Ferries #1 - Raw data'
 
 [configuration.python]
 version = '3.12.2'
