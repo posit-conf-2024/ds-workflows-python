@@ -1,15 +1,9 @@
 from shiny import Inputs, Outputs, Session, module, render, ui
 import datetime
-import os
-from pathlib import Path
 
 import polars as pl
-from dotenv import load_dotenv
-from ipyleaflet import GeoJSON, Map, Marker, AwesomeIcon, Popup, AntPath
-from ipywidgets import HTML
-from loguru import logger
-from pins import board_connect
-from shiny import App, render, ui, reactive
+from ipyleaflet import GeoJSON, Map, Marker, AwesomeIcon, AntPath
+from shiny import render, ui, reactive
 from shinywidgets import output_widget, render_widget
 
 

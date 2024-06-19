@@ -11,6 +11,7 @@ from pins import board_connect
 from shiny import App, render, ui, reactive
 from shinywidgets import output_widget, render_widget
 
+from src.module_model_explorer import model_explorer_server, model_explorer_ui
 from src.module_data_explorer import data_explorer_server, data_explorer_ui
 
 load_dotenv()
@@ -66,7 +67,14 @@ end_date = vessel_history.select(pl.col("Date").max()).collect().get_column("Dat
 # UI logic
 # ------------------------------------------------------------------------------
 app_ui = ui.page_navbar(
-    ui.nav_panel("Model Explorer", "work in progress"),
+    ui.nav_panel(
+        "Model Explorer",
+        model_explorer_ui(
+            "model_explorer_module",
+            vessel_verbose=vessel_verbose,
+            vessel_history=vessel_history
+        )
+    ),
     ui.nav_panel(
         "Data Explorer",
         data_explorer_ui(
@@ -83,6 +91,12 @@ app_ui = ui.page_navbar(
 # Server logic
 # ------------------------------------------------------------------------------
 def server(input, output, session):
+    model_explorer_server(
+        "model_explorer_module",
+        vessel_history=vessel_history,
+        terminal_locations=terminal_locations
+
+    )
     data_explorer_server(
         "data_explorer_module",
         vessel_history=vessel_history,
