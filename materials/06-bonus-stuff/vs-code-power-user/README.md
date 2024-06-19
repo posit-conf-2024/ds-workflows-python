@@ -2,6 +2,10 @@
 
 ## The Command Palette and Keyboard Shortcuts
 
+Mac vs. Windows:
+
+See <https://code.visualstudio.com/docs/getstarted/keybindings#_keyboard-shortcuts-reference> for more details.
+
 Open the command pallette, they type the action you want to do. No reason to memorize all the keyboard shortcuts!
 
 <kbd>⇧ Shift</kbd> + <kbd>⌘ Command</kbd> + <kbd>P</kbd>
@@ -16,11 +20,27 @@ Open/close the terminal:
 
 Go to a specific line:
 
-<kbd>⌘ Command</kbd> + <kbd>P</kbd> then type `:<line number>`
+<kbd>⌘ Command</kbd> + <kbd>P</kbd> then type:
+
+ ```
+ :<line number>
+ ```
 
 Go to a specific symbol:
 
-<kbd>⌘ Command</kbd> + <kbd>P</kbd> then type `@<symbol>`
+<kbd>⌘ Command</kbd> + <kbd>P</kbd> then type
+
+```
+@<symbol>
+```
+
+Trigger quick fix:
+
+<kbd>⌘ Command</kbd> + <kbd>.</kbd>
+
+Trigger suggestion:
+
+<kbd>⌃ Control</kbd> + <kbd>Space</kbd>
 
 ## Multiple cursors
 
