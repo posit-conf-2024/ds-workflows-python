@@ -1,10 +1,9 @@
 import datetime
 import random
-from textwrap import dedent
 
 import plotly.express as px
 import polars as pl
-from ipyleaflet import AntPath, AwesomeIcon, GeoJSON, Map, Marker
+from ipyleaflet import AntPath, AwesomeIcon, DivIcon, GeoJSON, Map, Marker
 from loguru import logger
 from shiny import Inputs, Outputs, Session, module, reactive, render, ui
 from shinywidgets import output_widget, render_widget
@@ -29,57 +28,52 @@ def get_route_options(vessel_history: pl.LazyFrame) -> dict:
     return options_dict
 
 
+def sidebar(vessel_history: pl.LazyFrame, vessel_verbose: pl.LazyFrame):
+    return ui.sidebar(
+        ui.input_select(
+            "selected_route",
+            "Route",
+            get_route_options(vessel_history),
+        ),
+        # TODO: add button to reverse route
+        ui.input_date(
+            "selected_date",
+            "Date",
+            value=datetime.date.today(),
+            min=datetime.date.today(),
+        ),
+        ui.input_select("selected_weather", "Weather:", ["cloudy", "sunny", "rainy"]),
+        ui.input_slider("selected_wind_speed", "Wind Speed:", value=10, min=0, max=100),
+        ui.input_select(
+            "selected_wind_direction",
+            "Wind Direction",
+            ["N", "NE", "E", "SE", "S", "SW", "W", "NW"],
+        ),
+        ui.input_select(
+            "selected_vessel_name",
+            "Vessel Name:",
+            ["All"]
+            + vessel_verbose.collect().get_column("VesselName").unique().to_list(),
+        ),
+        bg="#f8f8f8",
+        width="400px",
+    )
+
+
 @module.ui
 def model_explorer_ui(vessel_verbose: pl.LazyFrame, vessel_history: pl.LazyFrame):
     return ui.layout_sidebar(
-        ui.sidebar(
-            ui.input_select(
-                "selected_route",
-                "Route",
-                get_route_options(vessel_history),
-            ),
-            # TODO: add button to reverse route
-            ui.input_date(
-                "selected_date",
-                "Date",
-                value=datetime.date.today(),
-                min=datetime.date.today(),
-            ),
-            ui.input_select(
-                "selected_weather", "Weather:", ["cloudy", "sunny", "rainy"]
-            ),
-            ui.input_slider(
-                "selected_wind_speed", "Wind Speed:", value=10, min=0, max=100
-            ),
-            ui.input_select(
-                "selected_wind_direction",
-                "Wind Direction",
-                ["N", "NE", "E", "SE", "S", "SW", "W", "NW"],
-            ),
-            ui.input_select(
-                "selected_vessel_name",
-                "Vessel Name:",
-                ["All"]
-                + vessel_verbose.collect().get_column("VesselName").unique().to_list(),
-            ),
-            bg="#f8f8f8",
-            width="400px",
-        ),
+        sidebar(vessel_verbose=vessel_verbose, vessel_history=vessel_history),
+        # Value boxes
         ui.layout_column_wrap(
             ui.value_box(
                 "Predicted Delay",
                 ui.output_ui("predicted_delay_text"),
-                showcase=ui.output_ui("predicted_delay_showcase")
             ),
-            ui.value_box(
-                "Average Delay",
-                ui.output_ui("average_delay_text")
-            ),
-            ui.value_box(
-                "Standard Deviation of Delay",
-                ui.output_ui("std_delay_text")
-            ),
+            ui.value_box("Average Delay", ui.output_ui("average_delay_text")),
+            ui.value_box("Standard Deviation of Delay", ui.output_ui("std_delay_text")),
         ),
+        # Map and delay distribution
         ui.layout_column_wrap(
             ui.card(
                 ui.card_header("Ferry route"),
@@ -90,6 +84,7 @@ def model_explorer_ui(vessel_verbose: pl.LazyFrame, vessel_history: pl.LazyFrame
                 output_widget("distribution_of_delays_plot"),
             ),
         ),
+        # Route history table
         ui.card(
             ui.card_header("Route history"), ui.output_data_frame("route_history_table")
         ),
@@ -167,23 +162,13 @@ def model_explorer_server(
     def predicted_delay_text():
         return f"{predict_delay()} minutes"
 
-    @render.ui
-    def predicted_delay_showcase():
-        prediction = predict_delay()
-        avg = avg_delay = (
-            filtered_vessel_history()
-            .select(pl.col("Delay").mean().dt.total_minutes()).collect().item()
-        )
-        if prediction > avg:
-            return ui.tags.p("Bad!")
-        else:
-            return ui.tags.p("Good!")
-
     @render.text
     def average_delay_text():
         avg_delay = (
             filtered_vessel_history()
-            .select(pl.col("Delay").mean().dt.total_minutes()).collect().item()
+            .select(pl.col("Delay").mean().dt.total_minutes())
+            .collect()
+            .item()
         )
         return f"{avg_delay} minutes"
 
@@ -191,10 +176,11 @@ def model_explorer_server(
     def std_delay_text():
         standard_deviation_delay = (
             filtered_vessel_history()
-            .select(pl.col("Delay").std().dt.total_minutes()).collect().item()
+            .select(pl.col("Delay").std().dt.total_minutes())
+            .collect()
+            .item()
         )
         return f"{standard_deviation_delay} minutes"
-
 
     @render_widget
     def map():
@@ -257,7 +243,7 @@ def model_explorer_server(
 
         # Add the Hyatt as a marker
         hyatt_regency_seattle_location = (47.61453555315236, -122.33406011740034)
-        hotel_icon = AwesomeIcon(name="hotel", marker_color="red")
+        hotel_icon = AwesomeIcon(name="hotel", marker_color="blue")
         map.add_layer(
             Marker(
                 location=hyatt_regency_seattle_location,
@@ -275,7 +261,17 @@ def model_explorer_server(
             if start_finish == "start":
                 ferry_icon = AwesomeIcon(name="ship", marker_color="green")
             else:
-                ferry_icon = AwesomeIcon(name="ship", marker_color="red")
+                ferry_icon = AwesomeIcon(name="flag-checkered", marker_color="black")
+            text = DivIcon(
+                html=terminal["TerminalName"].title(),
+                icon_size=(len(terminal["TerminalName"]) * 7, 20),
+            )
+            map.add_layer(
+                Marker(
+                    location=(terminal["Latitude"] - 0.005, terminal["Longitude"]),
+                    icon=text,
+                )
+            )
             marker = Marker(
                 location=(terminal["Latitude"], terminal["Longitude"]),
                 draggable=False,
@@ -285,6 +281,20 @@ def model_explorer_server(
             map.add_layer(marker)
 
         # Add path between terminals
+        prediction = predict_delay()
+        avg_delay = (
+            filtered_vessel_history()
+            .select(pl.col("Delay").mean().dt.total_minutes())
+            .collect()
+            .item()
+        )
+        if prediction > avg_delay:
+            ant_line_colour = "red"
+            ant_line_pulse_colour = "yellow"
+        else:
+            ant_line_colour = "green"
+            ant_line_pulse_colour = "blue"
+
         ant_path = AntPath(
             locations=[
                 (
@@ -295,66 +305,17 @@ def model_explorer_server(
             ],
             dash_array=[1, 10],
             delay=1000,
-            color="#7590ba",
-            pulse_color="#3f6fba",
+            color=ant_line_colour,
+            pulse_color=ant_line_pulse_colour,
         )
 
         map.add(ant_path)
 
         return map
 
-    # @render.ui
-    # def quick_facts():
-    #     # Get input data
-    #     (
-    #         starting_terminal_name,
-    #         ending_terminal_name,
-    #     ) = get_starting_and_ending_terminal()
-    #     weather = input.selected_weather()
-    #     wind_speed = input.selected_wind_speed()
-    #     wind_direction = input.selected_wind_direction()
-    #     vessel_name = input.selected_vessel_name()
-    #     date = input.selected_date()
-
-    #     # Make prediction
-    #     predicted_delay = predict_delay()
-
-    #     # Summary data
-    #     avg_delay = (
-    #         filtered_vessel_history()
-    #         .select(pl.col("Delay").mean().dt.total_minutes())
-    #         .collect()
-    #         .item()
-    #     )
-    #     standard_deviation_delay = (
-    #         filtered_vessel_history()
-    #         .select(pl.col("Delay").std().dt.total_minutes())
-    #         .collect()
-    #         .item()
-    #     )
-    #     avg_trips_per_day = int(
-    #         filtered_vessel_history()
-    #         .select(pl.col("Date").dt.round("1d").cast(pl.Date))
-    #         .group_by("Date")
-    #         .count()
-    #         .select(pl.col("count").mean())
-    #         .collect()
-    #         .item()
-    #     )
-
-    #     text = f"""
-    #     The predicted delay is **{predicted_delay}** minutes.
-
-    #     - **Selected route:** {starting_terminal_name.title()} to {ending_terminal_name.title()}
-    #     - **Average delay:** {avg_delay} minutes with a standard deviation of {standard_deviation_delay} minutes.
-    #     - **Average trips/day:** {avg_trips_per_day}
-    #     """
-
-    #     # Render the UI
-    #     return ui.markdown(dedent(text).strip())
-
     @render_widget
     def distribution_of_delays_plot():
+        prediction = predict_delay()
         df = (
             filtered_vessel_history()
             .select(pl.col("Delay").dt.total_minutes())
@@ -363,6 +324,12 @@ def model_explorer_server(
         )
         fig = px.histogram(
             df, x="Delay", labels={"Delay": "Delay (minutes)", "count": "Count"}
+        )
+        fig.add_vline(
+            x=prediction,
+            line_color="red",
+            annotation_text=f"Prediction ({prediction} minutes)",
+            annotation=dict(font_color="red"),
         )
         return fig
 

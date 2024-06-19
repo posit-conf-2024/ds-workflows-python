@@ -1,21 +1,17 @@
-import datetime
 import os
 from pathlib import Path
 
 import polars as pl
 from dotenv import load_dotenv
-from ipyleaflet import GeoJSON, Map, Marker, AwesomeIcon, Popup, AntPath
-from ipywidgets import HTML
 from loguru import logger
 from pins import board_connect
-from shiny import App, render, ui, reactive
-from shinywidgets import output_widget, render_widget
+from shiny import App, ui
 
 from src.module_model_explorer import model_explorer_server, model_explorer_ui
-from src.module_data_explorer import data_explorer_server, data_explorer_ui
 
 load_dotenv()
 pl.Config(thousands_separator=True)
+
 
 # ------------------------------------------------------------------------------
 # Help functions
@@ -53,11 +49,8 @@ def read_data(pin_name: str) -> pl.LazyFrame:
 username = "sam.edwardes"
 vessel_verbose = read_data("vessel_verbose_clean")
 terminal_locations = read_data("terminal_locations_clean")
-vessel_history = (
-    read_data("vessel_history_clean")
-    .with_columns(
-        (pl.col('ActualDepart') - pl.col('ScheduledDepart')).alias('Delay'),
-    )
+vessel_history = read_data("vessel_history_clean").with_columns(
+    (pl.col("ActualDepart") - pl.col("ScheduledDepart")).alias("Delay"),
 )
 
 start_date = vessel_history.select(pl.col("Date").min()).collect().get_column("Date")[0]
@@ -72,20 +65,12 @@ app_ui = ui.page_navbar(
         model_explorer_ui(
             "model_explorer_module",
             vessel_verbose=vessel_verbose,
-            vessel_history=vessel_history
-        )
+            vessel_history=vessel_history,
+        ),
     ),
-    ui.nav_panel(
-        "Data Explorer",
-        data_explorer_ui(
-            "data_explorer_module",
-            vessel_verbose=vessel_verbose,
-            start_date=start_date,
-            end_date=end_date,
-        )
-    ),
-    title="Seattle Ferry Model & Data Explorer"
+    title="Seattle Ferry Model & Data Explorer",
 )
+
 
 # ------------------------------------------------------------------------------
 # Server logic
@@ -94,13 +79,7 @@ def server(input, output, session):
     model_explorer_server(
         "model_explorer_module",
         vessel_history=vessel_history,
-        terminal_locations=terminal_locations
-
-    )
-    data_explorer_server(
-        "data_explorer_module",
-        vessel_history=vessel_history,
-        terminal_locations=terminal_locations
+        terminal_locations=terminal_locations,
     )
 
 

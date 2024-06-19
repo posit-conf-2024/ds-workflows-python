@@ -12,13 +12,6 @@ asgiref==3.8.1
     # via shiny
 asttokens==2.4.1
     # via stack-data
-bleach==6.1.0
-    # via panel
-bokeh==3.4.1
-    # via
-    #   holoviews
-    #   hvplot
-    #   panel
 branca==0.7.2
     # via ipyleaflet
 certifi==2024.6.2
@@ -29,14 +22,8 @@ click==8.1.7
     # via
     #   shiny
     #   uvicorn
-colorcet==3.1.0
-    # via
-    #   holoviews
-    #   hvplot
 comm==0.2.2
     # via ipywidgets
-contourpy==1.2.1
-    # via bokeh
 decorator==5.1.1
     # via ipython
 executing==2.0.1
@@ -45,14 +32,10 @@ fsspec==2024.6.0
     # via pins
 h11==0.14.0
     # via uvicorn
-holoviews==1.19.0
-    # via hvplot
 htmltools==0.5.2
     # via shiny
 humanize==4.9.0
     # via pins
-hvplot==0.10.0
-    # via -r requirements.in
 idna==3.7
     # via
     #   anyio
@@ -73,7 +56,6 @@ jedi==0.19.1
     # via ipython
 jinja2==3.1.4
     # via
-    #   bokeh
     #   branca
     #   pins
 joblib==1.4.2
@@ -85,67 +67,36 @@ jupyter-leaflet==0.19.1
 jupyterlab-widgets==3.0.11
     # via ipywidgets
 linkify-it-py==2.0.3
-    # via
-    #   panel
-    #   shiny
+    # via shiny
 loguru==0.7.2
     # via -r requirements.in
-markdown==3.6
-    # via panel
 markdown-it-py==3.0.0
     # via
     #   mdit-py-plugins
-    #   panel
     #   shiny
 markupsafe==2.1.5
     # via jinja2
 matplotlib-inline==0.1.7
     # via ipython
 mdit-py-plugins==0.4.1
-    # via
-    #   panel
-    #   shiny
+    # via shiny
 mdurl==0.1.2
     # via markdown-it-py
 numpy==1.26.4
     # via
-    #   bokeh
-    #   contourpy
-    #   holoviews
-    #   hvplot
     #   pandas
     #   pyarrow
 packaging==24.0
     # via
-    #   bokeh
-    #   holoviews
     #   htmltools
-    #   hvplot
     #   plotly
     #   shiny
 pandas==2.2.2
-    # via
-    #   bokeh
-    #   holoviews
-    #   hvplot
-    #   panel
-    #   pins
-panel==1.4.4
-    # via
-    #   holoviews
-    #   hvplot
-param==2.1.0
-    # via
-    #   holoviews
-    #   hvplot
-    #   panel
-    #   pyviz-comms
+    # via pins
 parso==0.8.4
     # via jedi
 pexpect==4.9.0
     # via ipython
-pillow==10.3.0
-    # via bokeh
 pins==0.8.6
     # via -r requirements.in
 platformdirs==4.2.2
@@ -176,20 +127,12 @@ python-multipart==0.0.9
     # via shiny
 pytz==2024.1
     # via pandas
-pyviz-comms==3.0.2
-    # via
-    #   holoviews
-    #   panel
 pyyaml==6.0.1
-    # via
-    #   bokeh
-    #   pins
+    # via pins
 questionary==2.0.1
     # via shiny
 requests==2.32.3
-    # via
-    #   panel
-    #   pins
+    # via pins
 shiny==0.10.2
     # via
     #   -r requirements.in
@@ -199,7 +142,6 @@ shinywidgets==0.3.2
 six==1.16.0
     # via
     #   asttokens
-    #   bleach
     #   python-dateutil
 sniffio==1.3.1
     # via anyio
@@ -209,10 +151,6 @@ starlette==0.37.2
     # via shiny
 tenacity==8.4.1
     # via plotly
-tornado==6.4.1
-    # via bokeh
-tqdm==4.66.4
-    # via panel
 traitlets==5.14.3
     # via
     #   comm
@@ -226,7 +164,6 @@ traittypes==0.2.1
 typing-extensions==4.12.1
     # via
     #   htmltools
-    #   panel
     #   shiny
 tzdata==2024.1
     # via pandas
@@ -240,8 +177,6 @@ watchfiles==0.22.0
     # via shiny
 wcwidth==0.2.13
     # via prompt-toolkit
-webencodings==0.5.1
-    # via bleach
 websockets==12.0
     # via shiny
 widgetsnbextension==4.0.11
@@ -249,9 +184,6 @@ widgetsnbextension==4.0.11
 xxhash==3.4.1
     # via pins
 xyzservices==2024.6.0
-    # via
-    #   bokeh
-    #   ipyleaflet
-    #   panel
+    # via ipyleaflet
 zipp==3.19.2
     # via importlib-metadata
