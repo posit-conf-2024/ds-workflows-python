@@ -1,0 +1,7 @@
+jupyter==1.0.0
+posit-sdk==0.2.1
+great-tables==0.9.0
+numpy==2.0.0
+plotnine==0.13.6
+polars==0.20.31
+pyarrow==16.1.0
