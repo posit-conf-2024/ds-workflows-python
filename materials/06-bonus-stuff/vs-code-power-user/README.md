@@ -1,5 +1,27 @@
 # VS Code Power User
 
+## The Command Palette and Keyboard Shortcuts
+
+Open the command pallette, they type the action you want to do. No reason to memorize all the keyboard shortcuts!
+
+<kbd>⇧ Shift</kbd> + <kbd>⌘ Command</kbd> + <kbd>P</kbd>
+
+Open a specific file:
+
+<kbd>⌘ Command</kbd> + <kbd>P</kbd>
+
+Open/close the terminal:
+
+<kbd>⌘ Command</kbd> + <kbd>J</kbd>
+
+Go to a specific line:
+
+<kbd>⌘ Command</kbd> + <kbd>P</kbd> then type `:<line number>`
+
+Go to a specific symbol:
+
+<kbd>⌘ Command</kbd> + <kbd>P</kbd> then type `@<symbol>`
+
 ## Multiple cursors
 
 Use multiple cursors in VS Code to easily edit many lines at the same time (<https://code.visualstudio.com/docs/getstarted/tips-and-tricks#_column-box-selection>).
@@ -15,6 +37,37 @@ print('hello world')
 # %%
 print('how are you?')
 print('doing well I hope?')
+```
+
+## Format your Python code with Ruff
+
+Open the command pallette:
+
+<kbd>⇧ Shift</kbd> + <kbd>⌘ Command</kbd> + <kbd>P</kbd>
+
+Then type:
+
+```
+Ruff: Format document
+```
+
+or:
+
+```
+Ruff: Format imports
+```
+
+You can also use Ruff from the terminal:
+
+```bash
+# Format everything
+ruff format .
+
+# Fix imports
+ruff check --select I --fix .
+
+# Link to check for other issues
+ruff .
 ```
 
 ## Extensions
