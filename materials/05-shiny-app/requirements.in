@@ -1,0 +1,9 @@
+shiny==0.10.2
+polars==0.20.31
+pins==0.8.6
+ipyleaflet==0.19.1
+shinywidgets==0.3.2
+python-dotenv==1.0.1
+loguru==0.7.2
+pyarrow==16.1.0
+plotly==5.22.0
