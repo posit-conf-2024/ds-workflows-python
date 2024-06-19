@@ -1,58 +1,47 @@
 import random
+from re import S
 from textwrap import dedent
+from turtle import st
 from loguru import logger
-from shiny import Inputs, Outputs, Session, module, render, ui, req
+from shiny import Inputs, Outputs, Session, module, render, ui
 import datetime
 
 import polars as pl
-from ipyleaflet import GeoJSON, Map, Marker, AwesomeIcon, AntPath, FeatureGroup
+from ipyleaflet import GeoJSON, Map, Marker, AwesomeIcon, AntPath
 from shiny import render, ui, reactive
 from shinywidgets import output_widget, render_widget
 
 
-def get_terminal_options(vessel_history: pl.LazyFrame, col_name: str = "Departing") -> dict:
-    options = (
+def get_route_options(vessel_history: pl.LazyFrame) -> dict:
+    options_list = (
         vessel_history
-        .select(pl.col(col_name))
-        .group_by(col_name)
+        .group_by("Departing", "Arriving")
         .count()
         .sort("count", descending=True)
         .collect()
         .to_dicts()
     )
     options_dict = {}
-    for i in options:
-        terminal_name = i[col_name]
-        number_of_trips = i["count"]
-        options_dict[terminal_name] = f"{terminal_name.title()} ({number_of_trips:,} Voyages)"
+    for i in options_list:
+        arriving = i["Arriving"]
+        departing = i["Departing"]
+        n_trips = i["count"]
+        value = f"{arriving} | {departing}"
+        label = f"{arriving.title()} to {departing.title()} ({n_trips:,} trips)"
+        options_dict[value] = label
     return options_dict
 
 
 @module.ui
 def model_explorer_ui(vessel_verbose: pl.LazyFrame, vessel_history: pl.LazyFrame):
-    logger.info("Initializing UI ------------------------------")
-
-    starting_terminal_options = get_terminal_options(vessel_history, "Departing")
-    ending_terminal_options = get_terminal_options(
-        vessel_history.filter(pl.col("Departing").eq("seattle")),
-        "Arriving"
-    )
-
     return ui.layout_sidebar(
         ui.sidebar(
             ui.input_select(
-                "selected_starting_terminal",
-                "Starting Terminal:",
-                starting_terminal_options,
-                selected="seattle"
-
+                "selected_route",
+                "Route",
+                get_route_options(vessel_history),
             ),
-            ui.input_select(
-                "selected_ending_terminal",
-                "Ending Terminal:",
-                ending_terminal_options,
-                selected="bremerton"
-            ),
+            # TODO: add button to reverse route
             ui.input_date(
                 "selected_date",
                 "Date",
@@ -77,6 +66,7 @@ def model_explorer_ui(vessel_verbose: pl.LazyFrame, vessel_history: pl.LazyFrame
                 + vessel_verbose.collect().get_column("VesselName").unique().to_list(),
             ),
             bg="#f8f8f8",
+            width="400px"
         ),
         ui.layout_column_wrap(
             ui.card(
@@ -99,51 +89,25 @@ def model_explorer_server(
     vessel_history: pl.LazyFrame,
     terminal_locations: pl.LazyFrame,
 ):
-    @reactive.effect
-    @reactive.event(input.selected_starting_terminal, ignore_init=True)
-    def update_ending_terminal_options():
-        logger.info("Updating ending terminal options")
-        starting_terminal = input.selected_starting_terminal()
-        ending_terminal_options = get_terminal_options(
-            vessel_history.filter(pl.col("Departing").eq(starting_terminal)),
-            "Arriving"
-        )
-        ui.update_select("selected_ending_terminal", choices=ending_terminal_options)
-
     @reactive.calc
-    def starting_terminal_location() -> dict:
-        logger.info("Getting starting terminal data")
-        terminal_name = input.selected_starting_terminal()
-        df = terminal_locations.filter(
-            pl.col("TerminalName").eq(terminal_name)
-        ).collect()
-        if df.shape[0] > 1:
-            raise ValueError(f"More than one terminal found with name {terminal_name}")
-        return df.to_dicts()[0]
-
-    @reactive.calc
-    def ending_terminal_location() -> dict:
-        logger.info("Getting ending terminal data.")
-        terminal_name = input.selected_ending_terminal()
-        df = terminal_locations.filter(
-            pl.col("TerminalName").eq(terminal_name)
-        ).collect()
-        if df.shape[0] > 1:
-            raise ValueError(f"More than one terminal found with name {terminal_name}")
-        return df.to_dicts()[0]
+    def get_starting_and_ending_terminal() -> tuple[str, str]:
+        route = input.selected_route()
+        logger.info(f"{route=}")
+        start, end = [i.lower().strip() for i in route.split(" | ")]
+        logger.info(f"{start=}")
+        logger.info(f"{end=}")
+        return start, end
 
     @reactive.calc
     def filtered_vessel_history() -> pl.LazyFrame:
-        with reactive.isolate():
-            starting = input.selected_starting_terminal()
-        ending = input.selected_ending_terminal()
-        logger.info(f"Filtering vessel history on {starting} and {ending}")
+        starting_terminal_name, ending_terminal_name = get_starting_and_ending_terminal()
+        logger.info(f"Filtering vessel history on {starting_terminal_name} and {ending_terminal_name}")
         df = vessel_history.filter(
-            pl.col("Departing").eq(starting),
-            pl.col("Arriving").eq(ending),
+            pl.col("Departing").eq(starting_terminal_name),
+            pl.col("Arriving").eq(ending_terminal_name),
         )
         return df
-    #
+
     @reactive.calc
     def predict_delay() -> float:
         """
@@ -152,9 +116,7 @@ def model_explorer_server(
         """
         logger.info("Predicting delay")
         # Get input data
-        with reactive.isolate():
-            starting_terminal = starting_terminal_location()
-        ending_terminal = ending_terminal_location()
+        starting_terminal_name, ending_terminal_name = get_starting_and_ending_terminal()
         weather = input.selected_weather()
         wind_speed = input.selected_wind_speed()
         wind_direction = input.selected_wind_direction()
@@ -165,18 +127,12 @@ def model_explorer_server(
         df = filtered_vessel_history()
 
         avg_delay = (
-            df
-            .select(pl.col("Delay").mean().dt.total_minutes())
-            .collect()
-            .item()
+            df.select(pl.col("Delay").mean().dt.total_minutes()).collect().item()
         )
         logger.info(f"{avg_delay=}")
 
         standard_deviation_delay = (
-            df
-            .select(pl.col("Delay").std().dt.total_minutes())
-            .collect()
-            .item()
+            df.select(pl.col("Delay").std().dt.total_minutes()).collect().item()
         )
         logger.info(f"{standard_deviation_delay=}")
 
@@ -187,32 +143,37 @@ def model_explorer_server(
     @render_widget
     def map():
         # Get terminal data
-        starting_terminal = starting_terminal_location()
-        ending_terminal = ending_terminal_location()
+        starting_terminal_name, ending_terminal_name = get_starting_and_ending_terminal()
+
+        starting_terminal_data = (
+            terminal_locations.filter(pl.col("TerminalName").eq(starting_terminal_name))
+            .collect()
+            .to_dicts()
+        )[0]
+
+        ending_terminal_data = (
+            terminal_locations.filter(pl.col("TerminalName").eq(ending_terminal_name))
+            .collect()
+            .to_dicts()
+        )[0]
 
         # Remember latitude runs east -> west
         # longitude runs north -> south
 
         # Figure out the starting bounds
-        if starting_terminal["Latitude"] > ending_terminal["Latitude"]:
-            north = starting_terminal["Latitude"]
-            south = ending_terminal["Latitude"]
+        if starting_terminal_data["Latitude"] > ending_terminal_data["Latitude"]:
+            north = starting_terminal_data["Latitude"]
+            south = ending_terminal_data["Latitude"]
         else:
-            north = ending_terminal["Latitude"]
-            south = starting_terminal["Latitude"]
+            north = ending_terminal_data["Latitude"]
+            south = starting_terminal_data["Latitude"]
 
-        if starting_terminal["Longitude"] > ending_terminal["Longitude"]:
-            east = starting_terminal["Longitude"]
-            west = ending_terminal["Longitude"]
+        if starting_terminal_data["Longitude"] > ending_terminal_data["Longitude"]:
+            east = starting_terminal_data["Longitude"]
+            west = ending_terminal_data["Longitude"]
         else:
-            east = ending_terminal["Longitude"]
-            west = starting_terminal["Longitude"]
-
-        # Calculate the center
-        center = (
-            (starting_terminal["Latitude"] + ending_terminal["Latitude"]) / 2,
-            (starting_terminal["Longitude"] + starting_terminal["Longitude"]) / 2
-        )
+            east = ending_terminal_data["Longitude"]
+            west = starting_terminal_data["Longitude"]
 
         # The lat/lon bounds in the form [[south, west], [north, east]].
         starting_bounds = [
@@ -223,15 +184,17 @@ def model_explorer_server(
         # Create map
         map = Map()
         map.fit_bounds(starting_bounds)
-        map.add_layer(GeoJSON(
-            style={
-                "opacity": 1,
-                "dashArray": "9",
-                "fillOpacity": 0.1,
-                "weight": 1,
-            },
-            hover_style={"color": "white", "dashArray": "0", "fillOpacity": 0.5},
-        ))
+        map.add_layer(
+            GeoJSON(
+                style={
+                    "opacity": 1,
+                    "dashArray": "9",
+                    "fillOpacity": 0.1,
+                    "weight": 1,
+                },
+                hover_style={"color": "white", "dashArray": "0", "fillOpacity": 0.5},
+            )
+        )
 
         # Add the Hyatt as a marker
         hyatt_regency_seattle_location = (47.61453555315236, -122.33406011740034)
@@ -245,7 +208,9 @@ def model_explorer_server(
         )
 
         # Add all of the terminals as markers
-        for start_finish, terminal in zip(["start", "finish"], [starting_terminal, ending_terminal]):
+        for start_finish, terminal in zip(
+            ["start", "finish"], [starting_terminal_data, ending_terminal_data]
+        ):
             # Look up the terminal location
             # Create a marker for each terminal.
             if start_finish == "start":
@@ -263,8 +228,8 @@ def model_explorer_server(
         # Add path between terminals
         ant_path = AntPath(
             locations=[
-                (starting_terminal["Latitude"], starting_terminal["Longitude"]),
-                (ending_terminal["Latitude"], ending_terminal["Longitude"]),
+                (starting_terminal_data["Latitude"], starting_terminal_data["Longitude"]),
+                (ending_terminal_data["Latitude"], ending_terminal_data["Longitude"]),
             ],
             dash_array=[1, 10],
             delay=1000,
@@ -279,8 +244,7 @@ def model_explorer_server(
     @render.ui
     def quick_facts():
         # Get input data
-        starting_terminal = starting_terminal_location()
-        ending_terminal = ending_terminal_location()
+        starting_terminal_name, ending_terminal_name = get_starting_and_ending_terminal()
         weather = input.selected_weather()
         wind_speed = input.selected_wind_speed()
         wind_direction = input.selected_wind_direction()
@@ -316,7 +280,7 @@ def model_explorer_server(
         text = f"""
         The predicted delay is **{predicted_delay}** minutes.
 
-        - **Selected route:** {starting_terminal['TerminalName'].title()} to {ending_terminal['TerminalName'].title()}
+        - **Selected route:** {starting_terminal_name.title()} to {ending_terminal_name.title()}
         - **Average delay:** {avg_delay} minutes with a standard deviation of {standard_deviation_delay} minutes.
         - **Average trips/day:** {avg_trips_per_day}
         """
