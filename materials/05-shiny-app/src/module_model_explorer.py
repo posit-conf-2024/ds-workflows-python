@@ -1,21 +1,18 @@
-import random
-from re import S
-from textwrap import dedent
-from turtle import st
-from loguru import logger
-from shiny import Inputs, Outputs, Session, module, render, ui
 import datetime
+import random
+from textwrap import dedent
 
+import plotly.express as px
 import polars as pl
-from ipyleaflet import GeoJSON, Map, Marker, AwesomeIcon, AntPath
-from shiny import render, ui, reactive
+from ipyleaflet import AntPath, AwesomeIcon, GeoJSON, Map, Marker
+from loguru import logger
+from shiny import Inputs, Outputs, Session, module, reactive, render, ui
 from shinywidgets import output_widget, render_widget
 
 
 def get_route_options(vessel_history: pl.LazyFrame) -> dict:
     options_list = (
-        vessel_history
-        .group_by("Departing", "Arriving")
+        vessel_history.group_by("Departing", "Arriving")
         .count()
         .sort("count", descending=True)
         .collect()
@@ -66,14 +63,32 @@ def model_explorer_ui(vessel_verbose: pl.LazyFrame, vessel_history: pl.LazyFrame
                 + vessel_verbose.collect().get_column("VesselName").unique().to_list(),
             ),
             bg="#f8f8f8",
-            width="400px"
+            width="400px",
+        ),
+        ui.layout_column_wrap(
+            ui.value_box(
+                "Predicted Delay",
+                ui.output_ui("predicted_delay_text"),
+                showcase=ui.output_ui("predicted_delay_showcase")
+            ),
+            ui.value_box(
+                "Average Delay",
+                ui.output_ui("average_delay_text")
+            ),
+            ui.value_box(
+                "Standard Deviation of Delay",
+                ui.output_ui("std_delay_text")
+            ),
         ),
         ui.layout_column_wrap(
             ui.card(
                 ui.card_header("Ferry route"),
                 output_widget("map"),
             ),
-            ui.card(ui.card_header("Quick facts"), ui.output_ui("quick_facts")),
+            ui.card(
+                ui.card_header("Distribution of Delays"),
+                output_widget("distribution_of_delays_plot"),
+            ),
         ),
         ui.card(
             ui.card_header("Route history"), ui.output_data_frame("route_history_table")
@@ -100,8 +115,13 @@ def model_explorer_server(
 
     @reactive.calc
     def filtered_vessel_history() -> pl.LazyFrame:
-        starting_terminal_name, ending_terminal_name = get_starting_and_ending_terminal()
-        logger.info(f"Filtering vessel history on {starting_terminal_name} and {ending_terminal_name}")
+        (
+            starting_terminal_name,
+            ending_terminal_name,
+        ) = get_starting_and_ending_terminal()
+        logger.info(
+            f"Filtering vessel history on {starting_terminal_name} and {ending_terminal_name}"
+        )
         df = vessel_history.filter(
             pl.col("Departing").eq(starting_terminal_name),
             pl.col("Arriving").eq(ending_terminal_name),
@@ -116,7 +136,10 @@ def model_explorer_server(
         """
         logger.info("Predicting delay")
         # Get input data
-        starting_terminal_name, ending_terminal_name = get_starting_and_ending_terminal()
+        (
+            starting_terminal_name,
+            ending_terminal_name,
+        ) = get_starting_and_ending_terminal()
         weather = input.selected_weather()
         wind_speed = input.selected_wind_speed()
         wind_direction = input.selected_wind_direction()
@@ -140,10 +163,46 @@ def model_explorer_server(
             random.normalvariate(mu=avg_delay, sigma=standard_deviation_delay), 1
         )
 
+    @render.text
+    def predicted_delay_text():
+        return f"{predict_delay()} minutes"
+
+    @render.ui
+    def predicted_delay_showcase():
+        prediction = predict_delay()
+        avg = avg_delay = (
+            filtered_vessel_history()
+            .select(pl.col("Delay").mean().dt.total_minutes()).collect().item()
+        )
+        if prediction > avg:
+            return ui.tags.p("Bad!")
+        else:
+            return ui.tags.p("Good!")
+
+    @render.text
+    def average_delay_text():
+        avg_delay = (
+            filtered_vessel_history()
+            .select(pl.col("Delay").mean().dt.total_minutes()).collect().item()
+        )
+        return f"{avg_delay} minutes"
+
+    @render.text
+    def std_delay_text():
+        standard_deviation_delay = (
+            filtered_vessel_history()
+            .select(pl.col("Delay").std().dt.total_minutes()).collect().item()
+        )
+        return f"{standard_deviation_delay} minutes"
+
+
     @render_widget
     def map():
         # Get terminal data
-        starting_terminal_name, ending_terminal_name = get_starting_and_ending_terminal()
+        (
+            starting_terminal_name,
+            ending_terminal_name,
+        ) = get_starting_and_ending_terminal()
 
         starting_terminal_data = (
             terminal_locations.filter(pl.col("TerminalName").eq(starting_terminal_name))
@@ -228,7 +287,10 @@ def model_explorer_server(
         # Add path between terminals
         ant_path = AntPath(
             locations=[
-                (starting_terminal_data["Latitude"], starting_terminal_data["Longitude"]),
+                (
+                    starting_terminal_data["Latitude"],
+                    starting_terminal_data["Longitude"],
+                ),
                 (ending_terminal_data["Latitude"], ending_terminal_data["Longitude"]),
             ],
             dash_array=[1, 10],
@@ -241,52 +303,68 @@ def model_explorer_server(
 
         return map
 
-    @render.ui
-    def quick_facts():
-        # Get input data
-        starting_terminal_name, ending_terminal_name = get_starting_and_ending_terminal()
-        weather = input.selected_weather()
-        wind_speed = input.selected_wind_speed()
-        wind_direction = input.selected_wind_direction()
-        vessel_name = input.selected_vessel_name()
-        date = input.selected_date()
+    # @render.ui
+    # def quick_facts():
+    #     # Get input data
+    #     (
+    #         starting_terminal_name,
+    #         ending_terminal_name,
+    #     ) = get_starting_and_ending_terminal()
+    #     weather = input.selected_weather()
+    #     wind_speed = input.selected_wind_speed()
+    #     wind_direction = input.selected_wind_direction()
+    #     vessel_name = input.selected_vessel_name()
+    #     date = input.selected_date()
 
-        # Make prediction
-        predicted_delay = predict_delay()
+    #     # Make prediction
+    #     predicted_delay = predict_delay()
 
-        # Summary data
-        avg_delay = (
+    #     # Summary data
+    #     avg_delay = (
+    #         filtered_vessel_history()
+    #         .select(pl.col("Delay").mean().dt.total_minutes())
+    #         .collect()
+    #         .item()
+    #     )
+    #     standard_deviation_delay = (
+    #         filtered_vessel_history()
+    #         .select(pl.col("Delay").std().dt.total_minutes())
+    #         .collect()
+    #         .item()
+    #     )
+    #     avg_trips_per_day = int(
+    #         filtered_vessel_history()
+    #         .select(pl.col("Date").dt.round("1d").cast(pl.Date))
+    #         .group_by("Date")
+    #         .count()
+    #         .select(pl.col("count").mean())
+    #         .collect()
+    #         .item()
+    #     )
+
+    #     text = f"""
+    #     The predicted delay is **{predicted_delay}** minutes.
+
+    #     - **Selected route:** {starting_terminal_name.title()} to {ending_terminal_name.title()}
+    #     - **Average delay:** {avg_delay} minutes with a standard deviation of {standard_deviation_delay} minutes.
+    #     - **Average trips/day:** {avg_trips_per_day}
+    #     """
+
+    #     # Render the UI
+    #     return ui.markdown(dedent(text).strip())
+
+    @render_widget
+    def distribution_of_delays_plot():
+        df = (
             filtered_vessel_history()
-            .select(pl.col("Delay").mean().dt.total_minutes())
+            .select(pl.col("Delay").dt.total_minutes())
             .collect()
-            .item()
+            .to_pandas()
         )
-        standard_deviation_delay = (
-            filtered_vessel_history()
-            .select(pl.col("Delay").std().dt.total_minutes())
-            .collect()
-            .item()
+        fig = px.histogram(
+            df, x="Delay", labels={"Delay": "Delay (minutes)", "count": "Count"}
         )
-        avg_trips_per_day = int(
-            filtered_vessel_history()
-            .select(pl.col("Date").dt.round("1d").cast(pl.Date))
-            .group_by("Date")
-            .count()
-            .select(pl.col("count").mean())
-            .collect()
-            .item()
-        )
-
-        text = f"""
-        The predicted delay is **{predicted_delay}** minutes.
-
-        - **Selected route:** {starting_terminal_name.title()} to {ending_terminal_name.title()}
-        - **Average delay:** {avg_delay} minutes with a standard deviation of {standard_deviation_delay} minutes.
-        - **Average trips/day:** {avg_trips_per_day}
-        """
-
-        # Render the UI
-        return ui.markdown(dedent(text).strip())
+        return fig
 
     @render.data_frame
     def route_history_table():
