@@ -1,5 +1,4 @@
-Data Science Workflows with Posit Tools — Python Focus
-================
+# Data Science Workflows with Posit Tools — Python Focus
 
 ## posit::conf(2024)
 
@@ -29,6 +28,10 @@ This workshop is for you if you...
 
 ## Prework
 
+**Most important prework**
+
+- [ ] Bring your laptop.
+- [ ] Sign up for a GitHub account (so that we can use GitHub discussions).
 - [ ] Get an access code for the <https://wsdot.wa.gov/traffic/api/> API. Make sure to save your access code!
 
 <details>
@@ -37,6 +40,17 @@ This workshop is for you if you...
 ![Get the access code for the wsdot API](website/images/wsdot-access-token.png)
 
 </details>
+
+**Suggested prework**
+
+We are going to cover a LOT of breadth during the workshop. The suggestions below are completely OPTIONAL. If you have time, they will help you get the most out of the workshop.
+
+- [ ] We will primarily use polars (https://pola.rs/) for working with dataframes. You don't need to be an expert, but it would be helpful to have a basic understanding of how to use it. We suggest you install polars and go through the getting started guide: https://docs.pola.rs/user-guide/getting-started/
+- [ ] We will work with a tool called uv for creating and managing virtual environments. I suggest reading this blog post (written by Sam) to understand the basics: https://samedwardes.com/blog/2024-04-21-python-uv-workflow/.
+- [ ] We will build an interactive web app with Shiny. Work your way through the "Learn Shiny" section of the docs to get a better understanding of how it works: https://shiny.posit.co/py/docs/overview.html. Our app will use the "core" API: https://shiny.posit.co/py/docs/express-vs-core.html.
+- [ ] For data validation we will use pandera (https://pandera.readthedocs.io/en/stable/index.html). We will use the "DataFrame Models" approach: https://pandera.readthedocs.io/en/stable/dataframe_models.html
+- [ ] For training our model we will use scikit-learn (https://scikit-learn.org/stable/)
+- [ ] For model deployment and monitoring we will use vetiver (https://vetiver.posit.co/).
 
 ## Schedule
 
