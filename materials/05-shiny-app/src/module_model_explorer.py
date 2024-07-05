@@ -1,12 +1,20 @@
 import datetime
+import json
+import os
 import random
+from typing import Any
 
+import pandas as pd
 import plotly.express as px
 import polars as pl
+from click import style
 from ipyleaflet import AntPath, AwesomeIcon, DivIcon, GeoJSON, Map, Marker
 from loguru import logger
+from rich import inspect
+from rich.pretty import pprint
 from shiny import Inputs, Outputs, Session, module, reactive, render, ui
 from shinywidgets import output_widget, render_widget
+from vetiver.server import predict, vetiver_endpoint
 
 
 def get_route_options(vessel_history: pl.LazyFrame) -> dict:
@@ -28,42 +36,197 @@ def get_route_options(vessel_history: pl.LazyFrame) -> dict:
     return options_dict
 
 
-def sidebar(vessel_history: pl.LazyFrame, vessel_verbose: pl.LazyFrame):
+def get_weather_code_options() -> dict[int, str]:
+    """
+    See API docs for details: https://open-meteo.com/en/docs.
+
+    WMO Weather interpretation codes (WW)
+    Code	Description
+    0	Clear sky
+    1, 2, 3	Mainly clear, partly cloudy, and overcast
+    45, 48	Fog and depositing rime fog
+    51, 53, 55	Drizzle: Light, moderate, and dense intensity
+    56, 57	Freezing Drizzle: Light and dense intensity
+    61, 63, 65	Rain: Slight, moderate and heavy intensity
+    66, 67	Freezing Rain: Light and heavy intensity
+    71, 73, 75	Snow fall: Slight, moderate, and heavy intensity
+    77	Snow grains
+    80, 81, 82	Rain showers: Slight, moderate, and violent
+    85, 86	Snow showers slight and heavy
+    95 *	Thunderstorm: Slight or moderate
+    96, 99 *	Thunderstorm with slight and heavy hail
+    """
+    return {
+        0: "Clear sky",
+        1: "Mainly clear",
+        2: "Partly cloudy",
+        3: "Overcast",
+        45: "Fog",
+        48: "Depositing rime fog",
+        51: "Drizzle: Light intensity",
+        53: "Drizzle: Moderate intensity",
+        55: "Drizzle: Dense intensity",
+        56: "Freezing Drizzle: Light intensity",
+        57: "Freezing Drizzle: Dense intensity",
+        61: "Rain: Slight intensity",
+        63: "Rain: Moderate intensity",
+        65: "Rain: Heavy intensity",
+        66: "Freezing Rain: Light intensity",
+        67: "Freezing Rain: Heavy intensity",
+        71: "Snow fall: Slight intensity",
+        73: "Snow fall: Moderate intensity",
+        75: "Snow fall: Heavy intensity",
+        77: "Snow grains",
+        80: "Rain showers: Slight intensity",
+        81: "Rain showers: Moderate intensity",
+        82: "Rain showers: Violent intensity",
+        85: "Snow showers: Slight intensity",
+        86: "Snow showers: Heavy intensity",
+        95: "Thunderstorm: Slight intensity",
+        96: "Thunderstorm: with slight hail",
+        99: "Thunderstorm: with heavy hail",
+    }
+
+
+def sidebar(
+    vessel_history: pl.LazyFrame,
+    vessel_verbose: pl.LazyFrame,
+    terminal_weather: pl.LazyFrame,
+):
+    sidebar_background_color = "#f8f8f8"
+
     return ui.sidebar(
-        ui.input_select(
-            "selected_route",
-            "Route",
-            get_route_options(vessel_history),
+        ui.help_text("The parameters below are inputs to the Ferry Delay Prediction Model. Adjust the parameters to see how they impact the predicted delay time."),
+        ui.accordion(
+            ui.accordion_panel(
+                "Basic Information",
+                ui.input_select(
+                    "selected_route",
+                    "Route",
+                    get_route_options(vessel_history),
+                ),
+                # TODO: add button to reverse route
+                ui.input_select(
+                    "selected_vessel_name",
+                    "Vessel Name",
+                    vessel_verbose.select("VesselName")
+                    .unique()
+                    .sort("VesselName")
+                    .collect()
+                    .get_column("VesselName")
+                    .to_list(),
+                ),
+                style=f"background-color: {sidebar_background_color};",
+            ),
+            ui.accordion_panel(
+                "Date and Time",
+                ui.input_date(
+                    "selected_date",
+                    "Date",
+                    value=datetime.date.today(),
+                    min=datetime.date.today(),
+                ),
+                ui.input_slider("selected_hour", "Hour of Day", value=12, min=0, max=23),
+                style=f"background-color: {sidebar_background_color};",
+            ),
+            ui.accordion_panel(
+                "Wether Basics",
+                ui.input_select(
+                    "selected_weather_code",
+                    "Weather Code",
+                    get_weather_code_options(),  # type: ignore
+                ),
+                ui.input_slider(
+                    "selected_temperature",
+                    "Temperature (°C)",
+                    value=int(
+                        terminal_weather.select("temperature_2m").mean().collect().item()
+                    ),
+                    min=int(
+                        terminal_weather.select("temperature_2m").min().collect().item() - 10
+                    ),
+                    max=int(
+                        terminal_weather.select("temperature_2m").max().collect().item() + 10
+                    ),
+                ),
+                ui.input_slider(
+                    "selected_precipitation",
+                    "Precipitation (mm)",
+                    value=int(terminal_weather.select("precipitation").mean().collect().item()),
+                    min=0,
+                    max=int(
+                        terminal_weather.select("precipitation").max().collect().item() + 10
+                    ),
+                ),
+                ui.input_slider(
+                    "selected_cloud_cover",
+                    "Cloud Cover (%)",
+                    value=int(terminal_weather.select("cloud_cover").mean().collect().item()),
+                    min=0,
+                    max=100,
+                ),
+                style=f"background-color: {sidebar_background_color};",
+
+            ),
+            ui.accordion_panel(
+                "Wind",
+                ui.input_slider(
+                    "selected_wind_speed",
+                    "Wind Speed",
+                    value=int(
+                        terminal_weather.select("wind_speed_10m").mean().collect().item()
+                    ),
+                    min=0,
+                    max=int(
+                        terminal_weather.select("wind_speed_10m").max().collect().item() + 10
+                    ),
+                ),
+                ui.input_slider(
+                    "selected_wind_gust",
+                    "Wind Gusts",
+                    value=int(
+                        terminal_weather.select("wind_gusts_10m").mean().collect().item()
+                    ),
+                    min=0,
+                    max=int(
+                        terminal_weather.select("wind_gusts_10m").max().collect().item() + 10
+                    ),
+                ),
+                ui.input_select(
+                    "selected_wind_direction",
+                    "Wind Direction",
+                    {
+                        0: "N ↑",
+                        45: "NE ↗",
+                        90: "E →",
+                        135: "SE ↘",
+                        180: "S ↓",
+                        225: "SW ↙",
+                        270: "W ←",
+                        315: "NW ↖",
+                    },  # type: ignore
+                ),
+                style=f"background-color: {sidebar_background_color};",
+            )
+
         ),
-        # TODO: add button to reverse route
-        ui.input_date(
-            "selected_date",
-            "Date",
-            value=datetime.date.today(),
-            min=datetime.date.today(),
-        ),
-        ui.input_select("selected_weather", "Weather:", ["cloudy", "sunny", "rainy"]),
-        ui.input_slider("selected_wind_speed", "Wind Speed:", value=10, min=0, max=100),
-        ui.input_select(
-            "selected_wind_direction",
-            "Wind Direction",
-            ["N", "NE", "E", "SE", "S", "SW", "W", "NW"],
-        ),
-        ui.input_select(
-            "selected_vessel_name",
-            "Vessel Name:",
-            ["All"]
-            + vessel_verbose.collect().get_column("VesselName").unique().to_list(),
-        ),
-        bg="#f8f8f8",
+        bg=sidebar_background_color,
         width="400px",
     )
 
 
 @module.ui
-def model_explorer_ui(vessel_verbose: pl.LazyFrame, vessel_history: pl.LazyFrame):
+def model_explorer_ui(
+    vessel_verbose: pl.LazyFrame,
+    vessel_history: pl.LazyFrame,
+    terminal_weather: pl.LazyFrame,
+):
     return ui.layout_sidebar(
-        sidebar(vessel_verbose=vessel_verbose, vessel_history=vessel_history),
+        sidebar(
+            vessel_verbose=vessel_verbose,
+            vessel_history=vessel_history,
+            terminal_weather=terminal_weather,
+        ),
         # Value boxes
         ui.layout_column_wrap(
             ui.value_box(
@@ -85,8 +248,11 @@ def model_explorer_ui(vessel_verbose: pl.LazyFrame, vessel_history: pl.LazyFrame
             ),
         ),
         # Route history table
-        ui.card(
-            ui.card_header("Route history"), ui.output_data_frame("route_history_table")
+        ui.navset_card_pill(
+            ui.nav_panel("Route History", ui.output_data_frame("route_history_table")),
+            ui.nav_panel("Vessel Details", ui.output_code("vessel_details_output")),
+            ui.nav_panel("Vessel Drawing", ui.output_ui("vessel_drawing_output")),
+            ui.nav_panel("Vessel Silhouette", ui.output_ui("vessel_silhouette_output")),
         ),
     )
 
@@ -97,7 +263,9 @@ def model_explorer_server(
     output: Outputs,
     session: Session,
     vessel_history: pl.LazyFrame,
+    vessel_verbose: pl.LazyFrame,
     terminal_locations: pl.LazyFrame,
+    terminal_weather: pl.LazyFrame,
 ):
     @reactive.calc
     def get_starting_and_ending_terminal() -> tuple[str, str]:
@@ -124,39 +292,84 @@ def model_explorer_server(
         return df
 
     @reactive.calc
+    def get_selected_vessel_data() -> dict[str, Any]:
+        selected_vessel_data = (
+            vessel_verbose.filter(pl.col("VesselName") == input.selected_vessel_name())
+            .collect()
+            .to_dicts()[0]
+        )
+        return selected_vessel_data
+
+    @reactive.calc
     def predict_delay() -> float:
         """
-        This function is a placeholder, once the model is live update it to call the
-        Vetiver API.
+        The delay model is hosted on Posit Connect at this URL:
+        https://connect.posit.it/content/823c479e-3d5e-4898-8801-a5c2cec97bb5
         """
         logger.info("Predicting delay")
-        # Get input data
-        (
-            starting_terminal_name,
-            ending_terminal_name,
-        ) = get_starting_and_ending_terminal()
-        weather = input.selected_weather()
-        wind_speed = input.selected_wind_speed()
-        wind_direction = input.selected_wind_direction()
-        vessel_name = input.selected_vessel_name()
-        date = input.selected_date()
 
-        # Temporary fake prediction
-        df = filtered_vessel_history()
-
-        avg_delay = (
-            df.select(pl.col("Delay").mean().dt.total_minutes()).collect().item()
+        # Based on the selected vessel name, get all of the data related to that
+        # vessel.
+        selected_vessel_data = (
+            vessel_verbose.filter(pl.col("VesselName") == input.selected_vessel_name())
+            .collect()
+            .to_dicts()[0]
         )
-        logger.info(f"{avg_delay=}")
+        logger.info(f"Selected vessel data: {selected_vessel_data}")
 
-        standard_deviation_delay = (
-            df.select(pl.col("Delay").std().dt.total_minutes()).collect().item()
-        )
-        logger.info(f"{standard_deviation_delay=}")
+        # Some of the vessels have not been rebuilt. When this applies, impute
+        # the current year as the year rebuilt.
+        if selected_vessel_data["YearRebuilt"]:
+            year_rebuilt = selected_vessel_data["YearRebuilt"].year
+        else:
+            year_rebuilt = datetime.datetime.now().year
 
-        return round(
-            random.normalvariate(mu=avg_delay, sigma=standard_deviation_delay), 1
+        prediction_input_data = {
+            "Departing": get_starting_and_ending_terminal()[0],
+            "Arriving": get_starting_and_ending_terminal()[1],
+            "Month": input.selected_date().month,
+            "Weekday": input.selected_date().weekday(),
+            "Hour": input.selected_hour(),
+            "ClassName": selected_vessel_data["ClassName"],
+            "SpeedInKnots": selected_vessel_data["SpeedInKnots"],
+            "EngineCount": selected_vessel_data["EngineCount"],
+            "Horsepower": selected_vessel_data["Horsepower"],
+            "MaxPassengerCount": selected_vessel_data["MaxPassengerCount"],
+            "PassengerOnly": None,  # selected_vessel_data["PassengerOnly"],
+            "FastFerry": None,  # selected_vessel_data["FastFerry"],
+            "PropulsionInfo": selected_vessel_data["PropulsionInfo"],
+            "YearBuilt": selected_vessel_data["YearBuilt"].year,
+            "YearRebuilt": year_rebuilt,
+            "departing_weather_code": int(input.selected_weather_code()),
+            "departing_temperature_2m": input.selected_temperature(),
+            "departing_precipitation": None,  # input.selected_precipitation(),
+            "departing_cloud_cover": input.selected_cloud_cover(),
+            "departing_wind_speed_10m": input.selected_wind_speed(),
+            "departing_wind_direction_10m": int(input.selected_wind_direction()),
+            "departing_wind_gusts_10m": input.selected_wind_gust(),
+            "arriving_weather_code": int(input.selected_weather_code()),
+            "arriving_temperature_2m": input.selected_temperature(),
+            "arriving_precipitation": None,  # input.selected_precipitation(),
+            "arriving_cloud_cover": input.selected_cloud_cover(),
+            "arriving_wind_speed_10m": input.selected_wind_speed(),
+            "arriving_wind_direction_10m": int(input.selected_wind_direction()),
+            "arriving_wind_gusts_10m": input.selected_wind_gust(),
+        }
+
+        logger.info(f"Prediction input data: {prediction_input_data}")
+
+        # Make the prediction
+        prediction_results_df = predict(
+            vetiver_endpoint(
+                "https://connect.posit.it/content/823c479e-3d5e-4898-8801-a5c2cec97bb5/predict"
+            ),
+            pd.DataFrame.from_records([prediction_input_data]),
+            headers={"Authorization": f'Key {os.environ["CONNECT_API_KEY"]}'},
         )
+        prediction_results_value = prediction_results_df.iloc[0, 0]
+        logger.info(f"{prediction_results_value=}")
+
+        return round(float(prediction_results_value), 2) # type: ignore
 
     @render.text
     def predicted_delay_text():
@@ -252,7 +465,7 @@ def model_explorer_server(
             )
         )
 
-        # Add all of the terminals as markers
+        # Add the terminals as markers
         for start_finish, terminal in zip(
             ["start", "finish"], [starting_terminal_data, ending_terminal_data]
         ):
@@ -288,12 +501,17 @@ def model_explorer_server(
             .collect()
             .item()
         )
+
+        # When the prediction is greater than the average delay, the line will
+        # be red and the pulse will be yellow. The line will also move slower.
         if prediction > avg_delay:
             ant_line_colour = "red"
             ant_line_pulse_colour = "yellow"
+            delay = 5_000
         else:
             ant_line_colour = "green"
             ant_line_pulse_colour = "blue"
+            delay = 1_000
 
         ant_path = AntPath(
             locations=[
@@ -304,7 +522,7 @@ def model_explorer_server(
                 (ending_terminal_data["Latitude"], ending_terminal_data["Longitude"]),
             ],
             dash_array=[1, 10],
-            delay=1000,
+            delay=delay,
             color=ant_line_colour,
             pulse_color=ant_line_pulse_colour,
         )
@@ -351,3 +569,29 @@ def model_explorer_server(
             .collect()
         )
         return render.DataGrid(df, width="100%", summary=False)
+
+    @render.code
+    def vessel_details_output():
+        selected_vessel_data = get_selected_vessel_data()
+
+        def json_default(value):
+            """
+            json.dumps does not know how to serialize datetime objects. This
+            function will handle that case.
+            """
+            if isinstance(value, datetime.datetime):
+                return value.isoformat()
+            else:
+                return str(value)
+
+        return json.dumps(selected_vessel_data, default=json_default, indent=4)
+
+    @render.ui
+    def vessel_drawing_output():
+        selected_vessel_data = get_selected_vessel_data()
+        return ui.tags.img(src=selected_vessel_data["DrawingImg"])
+
+    @render.ui
+    def vessel_silhouette_output():
+        selected_vessel_data = get_selected_vessel_data()
+        return ui.tags.img(src=selected_vessel_data["SilhouetteImg"])
