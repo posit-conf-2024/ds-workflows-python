@@ -1,4 +1,5 @@
 import datetime
+import json
 import os
 import random
 
@@ -165,9 +166,14 @@ def model_explorer_ui(
             ),
         ),
         # Route history table
-        ui.card(
-            ui.card_header("Route history"), ui.output_data_frame("route_history_table")
-        ),
+        ui.layout_column_wrap(
+            ui.card(
+                ui.card_header("Route history"), ui.output_data_frame("route_history_table")
+            ),
+            ui.card(
+                ui.card_header("Vessel Details"), ui.output_code("vessel_details_output")
+            )
+        )
     )
 
 
@@ -468,3 +474,19 @@ def model_explorer_server(
             .collect()
         )
         return render.DataGrid(df, width="100%", summary=False)
+
+    @render.code
+    def vessel_details_output():
+        selected_vessel_data = (
+            vessel_verbose.filter(pl.col("VesselName") == input.selected_vessel_name())
+            .collect()
+            .to_dicts()[0]
+        )
+
+        def json_default(value):
+            if isinstance(value, datetime.datetime):
+                return value.isoformat()
+            else:
+                return str(value)
+
+        return json.dumps(selected_vessel_data, default=json_default, indent=4)
