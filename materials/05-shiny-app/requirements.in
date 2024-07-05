@@ -8,4 +8,4 @@ loguru==0.7.2
 pyarrow==16.1.0
 plotly==5.22.0
 vetiver==0.2.4
-ipykernel
+ipykernel==6.29.5
