@@ -1,10 +1,13 @@
 {
     "cSpell.words": [
         "apiaccesscode",
+        "dataframes",
         "Gagandeep",
+        "pandera",
         "Prework",
-        "vesselverbose",
-        "vesselhistory"
+        "scikit",
+        "vesselhistory",
+        "vesselverbose"
     ],
     "files.exclude": {
         "**/.git": true,
