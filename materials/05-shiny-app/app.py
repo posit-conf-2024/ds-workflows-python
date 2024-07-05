@@ -48,6 +48,7 @@ def read_data(pin_name: str) -> pl.LazyFrame:
 # ------------------------------------------------------------------------------
 username = "sam.edwardes"
 vessel_verbose = read_data("vessel_verbose_clean")
+terminal_weather = read_data("terminal_weather_clean")
 terminal_locations = read_data("terminal_locations_clean")
 vessel_history = read_data("vessel_history_clean").with_columns(
     (pl.col("ActualDepart") - pl.col("ScheduledDepart")).alias("Delay"),
@@ -66,6 +67,7 @@ app_ui = ui.page_navbar(
             "model_explorer_module",
             vessel_verbose=vessel_verbose,
             vessel_history=vessel_history,
+            terminal_weather=terminal_weather,
         ),
     ),
     title="Seattle Ferry Model & Data Explorer",
@@ -79,7 +81,9 @@ def server(input, output, session):
     model_explorer_server(
         "model_explorer_module",
         vessel_history=vessel_history,
+        vessel_verbose=vessel_verbose,
         terminal_locations=terminal_locations,
+        terminal_weather=terminal_weather,
     )
 
 

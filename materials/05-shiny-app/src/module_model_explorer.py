@@ -5,8 +5,10 @@ import plotly.express as px
 import polars as pl
 from ipyleaflet import AntPath, AwesomeIcon, DivIcon, GeoJSON, Map, Marker
 from loguru import logger
+from rich.pretty import pprint
 from shiny import Inputs, Outputs, Session, module, reactive, render, ui
 from shinywidgets import output_widget, render_widget
+from vetiver.server import predict, vetiver_endpoint
 
 
 def get_route_options(vessel_history: pl.LazyFrame) -> dict:
@@ -28,7 +30,20 @@ def get_route_options(vessel_history: pl.LazyFrame) -> dict:
     return options_dict
 
 
-def sidebar(vessel_history: pl.LazyFrame, vessel_verbose: pl.LazyFrame):
+def sidebar(
+    vessel_history: pl.LazyFrame,
+    vessel_verbose: pl.LazyFrame,
+    terminal_weather: pl.LazyFrame,
+):
+    weather_code_options = (
+        terminal_weather.select("weather_code")
+        .unique()
+        .sort("weather_code")
+        .collect()
+        .get_column("weather_code")
+        .to_list()
+    )
+
     return ui.sidebar(
         ui.input_select(
             "selected_route",
@@ -36,34 +51,96 @@ def sidebar(vessel_history: pl.LazyFrame, vessel_verbose: pl.LazyFrame):
             get_route_options(vessel_history),
         ),
         # TODO: add button to reverse route
+        ui.input_select(
+            "selected_vessel_name",
+            "Vessel Name",
+            vessel_verbose.select("VesselName")
+            .unique()
+            .sort("VesselName")
+            .collect()
+            .get_column("VesselName")
+            .to_list(),
+        ),
         ui.input_date(
             "selected_date",
             "Date",
             value=datetime.date.today(),
             min=datetime.date.today(),
         ),
-        ui.input_select("selected_weather", "Weather:", ["cloudy", "sunny", "rainy"]),
-        ui.input_slider("selected_wind_speed", "Wind Speed:", value=10, min=0, max=100),
+        ui.input_slider("selected_hour", "Hour of Day", value=12, min=0, max=23),
+        ui.input_select(
+            "selected_weather_code",
+            "Weather Code",
+            weather_code_options,
+        ),
+        ui.input_slider(
+            "selected_temperature",
+            "Temperature (°C)",
+            value=int(terminal_weather.select('temperature_2m').mean().collect().item()),
+            min=int(terminal_weather.select('temperature_2m').min().collect().item() - 10),
+            max=int(terminal_weather.select('temperature_2m').max().collect().item() + 10),
+        ),
+        ui.input_slider(
+            "selected_precipitation",
+            "Precipitation (mm)",
+            value=int(terminal_weather.select('precipitation').mean().collect().item()),
+            min=int(terminal_weather.select('precipitation').min().collect().item() - 10),
+            max=int(terminal_weather.select('precipitation').max().collect().item() + 10),
+        ),
+        ui.input_slider(
+            "selected_cloud_cover",
+            "Cloud Cover (%)",
+            value=int(terminal_weather.select('cloud_cover').mean().collect().item()),
+            min=0,
+            max=100,
+        ),
+        ui.input_slider(
+            "selected_wind_speed",
+            "Wind Speed",
+            value=int(terminal_weather.select('wind_speed_10m').mean().collect().item()),
+            min=0,
+            max=int(terminal_weather.select('wind_speed_10m').max().collect().item() + 10)
+        ),
+        ui.input_slider(
+            "selected_wind_gust",
+            "Wind Gusts",
+            value=int(terminal_weather.select('wind_gusts_10m').mean().collect().item()),
+            min=0,
+            max=int(terminal_weather.select('wind_gusts_10m').max().collect().item() + 10)
+        ),
         ui.input_select(
             "selected_wind_direction",
             "Wind Direction",
-            ["N", "NE", "E", "SE", "S", "SW", "W", "NW"],
+            {
+                0: "N ↑",
+                45: "NE ↗",
+                90: "E →",
+                135: "SE ↘",
+                180: "S ↓",
+                225: "SW ↙",
+                270: "W ←",
+                315: "NW ↖"
+            }, # type: ignore
         ),
-        ui.input_select(
-            "selected_vessel_name",
-            "Vessel Name:",
-            ["All"]
-            + vessel_verbose.collect().get_column("VesselName").unique().to_list(),
-        ),
+        ui.hr(),
+        ui.input_select("selected_weather", "Weather", ["cloudy", "sunny", "rainy"]),
         bg="#f8f8f8",
         width="400px",
     )
 
 
 @module.ui
-def model_explorer_ui(vessel_verbose: pl.LazyFrame, vessel_history: pl.LazyFrame):
+def model_explorer_ui(
+    vessel_verbose: pl.LazyFrame,
+    vessel_history: pl.LazyFrame,
+    terminal_weather: pl.LazyFrame,
+):
     return ui.layout_sidebar(
-        sidebar(vessel_verbose=vessel_verbose, vessel_history=vessel_history),
+        sidebar(
+            vessel_verbose=vessel_verbose,
+            vessel_history=vessel_history,
+            terminal_weather=terminal_weather,
+        ),
         # Value boxes
         ui.layout_column_wrap(
             ui.value_box(
@@ -97,7 +174,9 @@ def model_explorer_server(
     output: Outputs,
     session: Session,
     vessel_history: pl.LazyFrame,
+    vessel_verbose: pl.LazyFrame,
     terminal_locations: pl.LazyFrame,
+    terminal_weather: pl.LazyFrame,
 ):
     @reactive.calc
     def get_starting_and_ending_terminal() -> tuple[str, str]:
@@ -126,11 +205,46 @@ def model_explorer_server(
     @reactive.calc
     def predict_delay() -> float:
         """
-        This function is a placeholder, once the model is live update it to call the
-        Vetiver API.
+        The delay model is hosted on Posit Connect at this URL:
+        https://connect.posit.it/content/823c479e-3d5e-4898-8801-a5c2cec97bb5
+
+        Visit the model on Posit Connect for the latest info. For ease, I have
+        included the input schema in this doc string (as of 2024-07-05).
+
+        [{
+            Departing*: string
+            Arriving*: string
+            Month*: integer
+            Weekday*: integer
+            Hour*: integer
+            ClassName*: string
+            SpeedInKnots*: integer
+            EngineCount*: integer
+            Horsepower*: integer
+            MaxPassengerCount*: integer
+            PassengerOnly*: null
+            FastFerry*: null
+            PropulsionInfo*: string
+            YearBuilt*: integer
+            YearRebuilt*: integer
+            departing_weather_code*: integer
+            departing_temperature_2m*: number
+            departing_precipitation*: null
+            departing_cloud_cover*: integer
+            departing_wind_speed_10m*: number
+            departing_wind_direction_10m*: integer
+            departing_wind_gusts_10m*: number
+            arriving_weather_code*: integer
+            arriving_temperature_2m*: number
+            arriving_precipitation*: null
+            arriving_cloud_cover*: integer
+            arriving_wind_speed_10m*: number
+            arriving_wind_direction_10m*: integer
+            arriving_wind_gusts_10m*: number
+        }]
         """
         logger.info("Predicting delay")
-        # Get input data
+        # Get input data and map to the schema
         (
             starting_terminal_name,
             ending_terminal_name,
@@ -140,6 +254,55 @@ def model_explorer_server(
         wind_direction = input.selected_wind_direction()
         vessel_name = input.selected_vessel_name()
         date = input.selected_date()
+
+        # Based on the selected vessel name, get all of the data related to that
+        # vessel.
+        selected_vessel_data = (
+            vessel_verbose.filter(pl.col("VesselName") == input.selected_vessel_name())
+            .collect()
+            .to_dicts()[0]
+        )
+
+        prediction_input_data = {
+            "Departing": get_starting_and_ending_terminal()[0],
+            "Arriving": get_starting_and_ending_terminal()[1],
+            "Month": input.selected_date().month,
+            "Weekday": input.selected_date().weekday(),
+            "Hour": input.selected_hour(),
+            "ClassName": selected_vessel_data["ClassName"],
+            "SpeedInKnots": selected_vessel_data["SpeedInKnots"],
+            "EngineCount": selected_vessel_data["EngineCount"],
+            "Horsepower": selected_vessel_data["Horsepower"],
+            "MaxPassengerCount": selected_vessel_data["MaxPassengerCount"],
+            "PassengerOnly": selected_vessel_data["PassengerOnly"],
+            "FastFerry": selected_vessel_data["FastFerry"],
+            "PropulsionInfo": selected_vessel_data["PropulsionInfo"],
+            "YearBuilt": selected_vessel_data["YearBuilt"].year,
+            "YearRebuilt": selected_vessel_data["YearRebuilt"].year,
+            "departing_weather_code": int(input.selected_weather_code()),
+            "departing_temperature_2m": input.selected_temperature(),
+            "departing_precipitation": input.selected_precipitation(),
+            "departing_cloud_cover": input.selected_cloud_cover(),
+            "departing_wind_speed_10m": input.selected_wind_speed(),
+            "departing_wind_direction_10m": int(input.selected_wind_direction()),
+            "departing_wind_gusts_10m": input.selected_wind_gust(),
+            "arriving_weather_code": int(input.selected_weather_code()),
+            "arriving_temperature_2m": input.selected_temperature(),
+            "arriving_precipitation": input.selected_precipitation(),
+            "arriving_cloud_cover": input.selected_cloud_cover(),
+            "arriving_wind_speed_10m": input.selected_wind_speed(),
+            "arriving_wind_direction_10m": int(input.selected_wind_direction()),
+            "arriving_wind_gusts_10m": input.selected_wind_gust(),
+        }
+
+        logger.info("Prediction input data:")
+        pprint({k: v for k, v in prediction_input_data.items() if v is not None})
+
+        # Load the vetiver model
+        endpoint = vetiver_endpoint(
+            "https://connect.posit.it/content/823c479e-3d5e-4898-8801-a5c2cec97bb5/predict"
+        )
+        logger.info(endpoint)
 
         # Temporary fake prediction
         df = filtered_vessel_history()
