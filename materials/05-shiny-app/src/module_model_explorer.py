@@ -1,10 +1,13 @@
 import datetime
+import os
 import random
 
+import pandas as pd
 import plotly.express as px
 import polars as pl
 from ipyleaflet import AntPath, AwesomeIcon, DivIcon, GeoJSON, Map, Marker
 from loguru import logger
+from rich import inspect
 from rich.pretty import pprint
 from shiny import Inputs, Outputs, Session, module, reactive, render, ui
 from shinywidgets import output_widget, render_widget
@@ -207,53 +210,8 @@ def model_explorer_server(
         """
         The delay model is hosted on Posit Connect at this URL:
         https://connect.posit.it/content/823c479e-3d5e-4898-8801-a5c2cec97bb5
-
-        Visit the model on Posit Connect for the latest info. For ease, I have
-        included the input schema in this doc string (as of 2024-07-05).
-
-        [{
-            Departing*: string
-            Arriving*: string
-            Month*: integer
-            Weekday*: integer
-            Hour*: integer
-            ClassName*: string
-            SpeedInKnots*: integer
-            EngineCount*: integer
-            Horsepower*: integer
-            MaxPassengerCount*: integer
-            PassengerOnly*: null
-            FastFerry*: null
-            PropulsionInfo*: string
-            YearBuilt*: integer
-            YearRebuilt*: integer
-            departing_weather_code*: integer
-            departing_temperature_2m*: number
-            departing_precipitation*: null
-            departing_cloud_cover*: integer
-            departing_wind_speed_10m*: number
-            departing_wind_direction_10m*: integer
-            departing_wind_gusts_10m*: number
-            arriving_weather_code*: integer
-            arriving_temperature_2m*: number
-            arriving_precipitation*: null
-            arriving_cloud_cover*: integer
-            arriving_wind_speed_10m*: number
-            arriving_wind_direction_10m*: integer
-            arriving_wind_gusts_10m*: number
-        }]
         """
         logger.info("Predicting delay")
-        # Get input data and map to the schema
-        (
-            starting_terminal_name,
-            ending_terminal_name,
-        ) = get_starting_and_ending_terminal()
-        weather = input.selected_weather()
-        wind_speed = input.selected_wind_speed()
-        wind_direction = input.selected_wind_direction()
-        vessel_name = input.selected_vessel_name()
-        date = input.selected_date()
 
         # Based on the selected vessel name, get all of the data related to that
         # vessel.
@@ -262,6 +220,14 @@ def model_explorer_server(
             .collect()
             .to_dicts()[0]
         )
+        logger.info(f"Selected vessel data: {selected_vessel_data}")
+
+        # Some of the vessels have not been rebuilt. When this applies, impute
+        # the current year as the year rebuilt.
+        if selected_vessel_data["YearRebuilt"]:
+            year_rebuilt = selected_vessel_data["YearRebuilt"].year
+        else:
+            year_rebuilt = datetime.datetime.now().year
 
         prediction_input_data = {
             "Departing": get_starting_and_ending_terminal()[0],
@@ -274,52 +240,40 @@ def model_explorer_server(
             "EngineCount": selected_vessel_data["EngineCount"],
             "Horsepower": selected_vessel_data["Horsepower"],
             "MaxPassengerCount": selected_vessel_data["MaxPassengerCount"],
-            "PassengerOnly": selected_vessel_data["PassengerOnly"],
-            "FastFerry": selected_vessel_data["FastFerry"],
+            "PassengerOnly": None, # selected_vessel_data["PassengerOnly"],
+            "FastFerry": None, # selected_vessel_data["FastFerry"],
             "PropulsionInfo": selected_vessel_data["PropulsionInfo"],
             "YearBuilt": selected_vessel_data["YearBuilt"].year,
-            "YearRebuilt": selected_vessel_data["YearRebuilt"].year,
+            "YearRebuilt": year_rebuilt,
             "departing_weather_code": int(input.selected_weather_code()),
             "departing_temperature_2m": input.selected_temperature(),
-            "departing_precipitation": input.selected_precipitation(),
+            "departing_precipitation": None, # input.selected_precipitation(),
             "departing_cloud_cover": input.selected_cloud_cover(),
             "departing_wind_speed_10m": input.selected_wind_speed(),
             "departing_wind_direction_10m": int(input.selected_wind_direction()),
             "departing_wind_gusts_10m": input.selected_wind_gust(),
             "arriving_weather_code": int(input.selected_weather_code()),
             "arriving_temperature_2m": input.selected_temperature(),
-            "arriving_precipitation": input.selected_precipitation(),
+            "arriving_precipitation": None, # input.selected_precipitation(),
             "arriving_cloud_cover": input.selected_cloud_cover(),
             "arriving_wind_speed_10m": input.selected_wind_speed(),
             "arriving_wind_direction_10m": int(input.selected_wind_direction()),
             "arriving_wind_gusts_10m": input.selected_wind_gust(),
         }
 
-        logger.info("Prediction input data:")
-        pprint({k: v for k, v in prediction_input_data.items() if v is not None})
+        logger.info(f"Prediction input data: {prediction_input_data}")
+        pprint(prediction_input_data)
 
-        # Load the vetiver model
-        endpoint = vetiver_endpoint(
-            "https://connect.posit.it/content/823c479e-3d5e-4898-8801-a5c2cec97bb5/predict"
+        # Make the prediction
+        prediction_results_df = predict(
+            vetiver_endpoint("https://connect.posit.it/content/823c479e-3d5e-4898-8801-a5c2cec97bb5/predict"),
+            pd.DataFrame.from_records([prediction_input_data]),
+            headers={"Authorization": f'Key {os.environ["CONNECT_API_KEY"]}'}
         )
-        logger.info(endpoint)
+        prediction_results_value = prediction_results_df.iloc[0, 0]
+        logger.info(f"{prediction_results_value=}")
 
-        # Temporary fake prediction
-        df = filtered_vessel_history()
-
-        avg_delay = (
-            df.select(pl.col("Delay").mean().dt.total_minutes()).collect().item()
-        )
-        logger.info(f"{avg_delay=}")
-
-        standard_deviation_delay = (
-            df.select(pl.col("Delay").std().dt.total_minutes()).collect().item()
-        )
-        logger.info(f"{standard_deviation_delay=}")
-
-        return round(
-            random.normalvariate(mu=avg_delay, sigma=standard_deviation_delay), 1
-        )
+        return round(float(prediction_results_value), 2)
 
     @render.text
     def predicted_delay_text():
