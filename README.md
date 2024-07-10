@@ -66,12 +66,6 @@ We are going to cover a LOT of breadth during the workshop. The suggestions belo
 
 ## Instructors
 
-**Gagandeep Singh**
-
-Gagandeep is a Solutions Engineer at Posit PBS based in Toronto, Canada. He is a former software engineer and data scientist who has worked in a variety of cross-technology teams before joining Posit.
-
-- https://github.com/gsingh91
-
 **Sam Edwardes**
 
 Sam is a Solutions Engineer at Posit PBC based out of Vancouver, British Columbia, Canada. As a Solutions Engineer he helps customers effectively use Posit's professional products with open source Python and R tools. He is passionate about Python, R, and all things open source!
@@ -79,6 +73,13 @@ Sam is a Solutions Engineer at Posit PBC based out of Vancouver, British Columbi
 - https://github.com/SamEdwardes
 - https://fosstodon.org/@SamEdwardes
 - https://www.linkedin.com/in/samedwardes/
+
+**Michael Beigelmacher**
+
+Michael is a Solutions Engineer at Posit PBC based out of Brooklyn, New York, USA. He's worn many hats as a software engineer, data scientist and Linux sysadmin, something he continues to do at Posit. Michael enjoys using Python, R and various tools whenever he has a job that needs to get done.
+
+- https://github.com/brooklynbagel
+- https://www.linkedin.com/in/beigelmacher/
 
 -----
 
