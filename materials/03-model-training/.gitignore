@@ -1,0 +1,4 @@
+rsconnect-python/
+*.html
+.posit/
+*_files/

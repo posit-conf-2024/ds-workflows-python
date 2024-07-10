@@ -1,0 +1,10 @@
+ipykernel
+scikit-learn
+vetiver
+pins
+polars
+pyarrow
+jupyter
+python-dotenv
+hvplot
+posit-sdk
