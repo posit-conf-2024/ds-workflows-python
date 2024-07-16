@@ -8,3 +8,6 @@ jupyter
 python-dotenv
 hvplot
 posit-sdk
+ibis-framework[postgres]
+rich[jupyter]
+adbc-driver-postgresql
