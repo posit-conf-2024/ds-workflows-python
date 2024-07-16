@@ -2,7 +2,7 @@
 
 ## posit::conf(2024)
 
-by Gagandeep Singh, Sam Edwardes
+by Sam Edwardes & Michael Beigelmacher
 
 -----
 
