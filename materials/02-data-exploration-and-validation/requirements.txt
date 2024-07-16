@@ -10,8 +10,6 @@ anyio==4.3.0
     # via
     #   httpx
     #   jupyter-server
-appdirs==1.4.4
-    # via pins
 argon2-cffi==23.1.0
     # via jupyter-server
 argon2-cffi-bindings==21.2.0
@@ -65,8 +63,6 @@ fonttools==4.53.0
     # via matplotlib
 fqdn==1.5.1
     # via jsonschema
-fsspec==2024.3.1
-    # via pins
 h11==0.14.0
     # via httpcore
 httpcore==1.0.5
@@ -75,20 +71,14 @@ httpx==0.27.0
     # via
     #   -r requirements.in
     #   jupyterlab
-humanize==4.9.0
-    # via pins
 idna==3.7
     # via
     #   anyio
     #   httpx
     #   jsonschema
     #   requests
-importlib-metadata==7.1.0
-    # via pins
 importlib-resources==6.4.0
-    # via
-    #   adbc-driver-postgresql
-    #   pins
+    # via adbc-driver-postgresql
 ipykernel==6.29.4
     # via
     #   -r requirements.in
@@ -113,9 +103,6 @@ jinja2==3.1.4
     #   jupyterlab
     #   jupyterlab-server
     #   nbconvert
-    #   pins
-joblib==1.4.2
-    # via pins
 json5==0.9.25
     # via jupyterlab-server
 jsonpointer==2.4
@@ -234,9 +221,7 @@ packaging==24.0
     #   qtconsole
     #   qtpy
 pandas==2.2.2
-    # via
-    #   pandera
-    #   pins
+    # via pandera
 pandera==0.20.1
     # via -r requirements.in
 pandocfilters==1.5.1
@@ -247,8 +232,6 @@ pexpect==4.9.0
     # via ipython
 pillow==10.3.0
     # via matplotlib
-pins==0.8.6
-    # via -r requirements.in
 pip==24.0
     # via rsconnect-python
 platformdirs==4.2.1
@@ -301,9 +284,7 @@ python-json-logger==2.0.7
 pytz==2024.1
     # via pandas
 pyyaml==6.0.1
-    # via
-    #   jupyter-events
-    #   pins
+    # via jupyter-events
 pyzmq==26.0.3
     # via
     #   ipykernel
@@ -321,9 +302,7 @@ referencing==0.35.1
     #   jsonschema-specifications
     #   jupyter-events
 requests==2.31.0
-    # via
-    #   jupyterlab-server
-    #   pins
+    # via jupyterlab-server
 rfc3339-validator==0.1.4
     # via
     #   jsonschema
@@ -397,6 +376,7 @@ types-python-dateutil==2.9.0.20240316
 typing-extensions==4.11.0
     # via
     #   adbc-driver-manager
+    #   ipython
     #   pydantic
     #   pydantic-core
     #   rsconnect-python
@@ -424,7 +404,3 @@ widgetsnbextension==4.0.11
     # via ipywidgets
 wrapt==1.16.0
     # via pandera
-xxhash==3.4.1
-    # via pins
-zipp==3.18.1
-    # via importlib-metadata
