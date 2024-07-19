@@ -37,7 +37,7 @@ This workshop is for you if you...
 <details>
 <summary>Expand to see screenshot of how to get the access code.</summary>
 
-![Get the access code for the wsdot API](website/images/wsdot-access-token.png)
+![Get the access code for the wsdot API](assets/imgs/wsdot-access-token.png)
 
 </details>
 
