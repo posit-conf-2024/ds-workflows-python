@@ -1,5 +1,6 @@
 shiny==0.10.2
 polars==0.20.31
+ibis-framework[postgres]==9.1.0
 pins==0.8.6
 ipyleaflet==0.19.1
 shinywidgets==0.3.2

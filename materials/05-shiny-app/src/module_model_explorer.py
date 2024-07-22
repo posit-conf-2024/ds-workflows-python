@@ -3,6 +3,8 @@ import json
 import os
 import random
 from typing import Any
+import ibis
+from ibis.backends.postgres import Backend
 
 import pandas as pd
 import plotly.express as px
@@ -220,6 +222,7 @@ def model_explorer_ui(
     vessel_verbose: pl.LazyFrame,
     vessel_history: pl.LazyFrame,
     terminal_weather: pl.LazyFrame,
+    con: Backend
 ):
     return ui.layout_sidebar(
         sidebar(
@@ -266,6 +269,7 @@ def model_explorer_server(
     vessel_verbose: pl.LazyFrame,
     terminal_locations: pl.LazyFrame,
     terminal_weather: pl.LazyFrame,
+    con: Backend,
 ):
     @reactive.calc
     def get_starting_and_ending_terminal() -> tuple[str, str]:

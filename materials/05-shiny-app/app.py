@@ -1,13 +1,14 @@
 import os
-from pathlib import Path
+
 
 import polars as pl
 from dotenv import load_dotenv
 from loguru import logger
-from pins import board_connect
+import ibis
 from shiny import App, ui
 
 from src.module_model_explorer import model_explorer_server, model_explorer_ui
+from src.database import get_con
 
 load_dotenv()
 pl.Config(thousands_separator=True)
@@ -16,37 +17,19 @@ pl.Config(thousands_separator=True)
 # ------------------------------------------------------------------------------
 # Help functions
 # ------------------------------------------------------------------------------
-def read_data(pin_name: str) -> pl.LazyFrame:
-    pin_full_name = f"{username}/{pin_name}"
-    cache_path = Path(f".cache/{pin_name}.parquet")
-
-    # If the data is cached, read from the cache. This speeds up development.
-    if cache_path.exists():
-        logger.info("Reading vessel_history_clean from cache")
-        df = pl.read_parquet(cache_path)
-
-    # If the data is not cached, read from Posit Connect.
-    else:
-        # Read from Posit Connect
-        logger.info(f"Reading {pin_full_name} from Posit Connect")
-        board = board_connect()
-        board.pin_read(pin_full_name)
-        paths = board.pin_download(pin_full_name)
-        df = pl.read_parquet(paths)
-
-        # If not running on Connect, cache the data.
-        if os.getenv("LOCAL_DEV"):
-            logger.info(f"Caching {pin_name}")
-            Path(".cache").mkdir(exist_ok=True)
-            df.write_parquet(cache_path)
-
+def read_data(table_name: str) -> pl.LazyFrame:
+    logger.error(f"Reading all of {table_name} from the database...")
+    con = get_con()
+    table = con.table(table_name)
+    # Note to self, table.to_polars was not working for some reason.
+    df = pl.DataFrame(table.to_pandas())
     return df.lazy()
 
 
 # ------------------------------------------------------------------------------
 # Global state
 # ------------------------------------------------------------------------------
-username = "sam.edwardes"
+con = get_con()
 vessel_verbose = read_data("vessel_verbose_clean")
 terminal_weather = read_data("terminal_weather_clean")
 terminal_locations = read_data("terminal_locations_clean")
@@ -68,6 +51,7 @@ app_ui = ui.page_navbar(
             vessel_verbose=vessel_verbose,
             vessel_history=vessel_history,
             terminal_weather=terminal_weather,
+            con=con,
         ),
     ),
     title="Seattle Ferry Model & Data Explorer",
@@ -84,6 +68,7 @@ def server(input, output, session):
         vessel_verbose=vessel_verbose,
         terminal_locations=terminal_locations,
         terminal_weather=terminal_weather,
+        con=con,
     )
 
 
