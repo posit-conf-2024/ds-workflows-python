@@ -6,6 +6,13 @@ Shiny for Python is a framework for building web apps in pure Python.
 
 > Effortless Python web applications with the power of reactive programming.
 
+- https://shiny.rstudio.com/py
+- Powerful and intuitive reactivity model
+- Highly customizable
+- Designed to work integrate with popular visualization packages like Matplotlib, Seaborn, Plotnine, and Plotly. You can even embed live Jupyter widgets in your Shiny apps.
+
+![Shiny for python hex](imgs/shiny-for-python.png)
+
 **Pure Python**
 
 - Shiny
@@ -27,7 +34,10 @@ If you are interested, here are some articles and videos that compare these popu
 
 ### 🔄 Task 1 - Understand Shiny Essentials
 
-Lets walk through the first page of the docs: <https://shiny.posit.co/py/docs/overview.html>.
+Lets walk through the first page of the docs: <https://shiny.posit.co/py/docs/overview.html>. To get started with Shiny you need to understand the two main components:
+
+- UI
+- Server
 
 ### 🔄 Task 2 - Shiny "Express" vs. "Core"
 
