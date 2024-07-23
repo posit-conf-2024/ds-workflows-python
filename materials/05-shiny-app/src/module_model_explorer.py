@@ -7,7 +7,8 @@ from typing import Any
 import pandas as pd
 import plotly.express as px
 import polars as pl
-from click import style
+from ibis import _
+from ibis.backends.postgres import Backend
 from ipyleaflet import AntPath, AwesomeIcon, DivIcon, GeoJSON, Map, Marker
 from loguru import logger
 from rich import inspect
@@ -16,20 +17,23 @@ from shiny import Inputs, Outputs, Session, module, reactive, render, ui
 from shinywidgets import output_widget, render_widget
 from vetiver.server import predict, vetiver_endpoint
 
+from src.timer import time_function
 
-def get_route_options(vessel_history: pl.LazyFrame) -> dict:
+
+def get_route_options(con: Backend) -> dict:
     options_list = (
-        vessel_history.group_by("Departing", "Arriving")
-        .count()
-        .sort("count", descending=True)
-        .collect()
+        con.table("vessel_history_clean")
+        .group_by(["Departing", "Arriving"])
+        .aggregate(n=_.Departing.count())
+        .order_by(_.n.desc())
+        .to_polars()
         .to_dicts()
     )
     options_dict = {}
     for i in options_list:
         arriving = i["Arriving"]
         departing = i["Departing"]
-        n_trips = i["count"]
+        n_trips = i["n"]
         value = f"{arriving} | {departing}"
         label = f"{arriving.title()} to {departing.title()} ({n_trips:,} trips)"
         options_dict[value] = label
@@ -88,34 +92,26 @@ def get_weather_code_options() -> dict[int, str]:
     }
 
 
-def sidebar(
-    vessel_history: pl.LazyFrame,
-    vessel_verbose: pl.LazyFrame,
-    terminal_weather: pl.LazyFrame,
-):
+def sidebar(con: Backend):
     sidebar_background_color = "#f8f8f8"
 
+    vessel_names = (
+        con.table("vessel_verbose_clean")
+        .select("VesselName")
+        .to_polars()
+        .get_column("VesselName")
+        .to_list()
+    )
+
     return ui.sidebar(
-        ui.help_text("The parameters below are inputs to the Ferry Delay Prediction Model. Adjust the parameters to see how they impact the predicted delay time."),
+        ui.help_text(
+            "The parameters below are inputs to the Ferry Delay Prediction Model. Adjust the parameters to see how they impact the predicted delay time."
+        ),
         ui.accordion(
             ui.accordion_panel(
                 "Basic Information",
-                ui.input_select(
-                    "selected_route",
-                    "Route",
-                    get_route_options(vessel_history),
-                ),
-                # TODO: add button to reverse route
-                ui.input_select(
-                    "selected_vessel_name",
-                    "Vessel Name",
-                    vessel_verbose.select("VesselName")
-                    .unique()
-                    .sort("VesselName")
-                    .collect()
-                    .get_column("VesselName")
-                    .to_list(),
-                ),
+                ui.input_select("selected_route", "Route", get_route_options(con)),
+                ui.input_select("selected_vessel_name", "Vessel Name", vessel_names),
                 style=f"background-color: {sidebar_background_color};",
             ),
             ui.accordion_panel(
@@ -126,7 +122,9 @@ def sidebar(
                     value=datetime.date.today(),
                     min=datetime.date.today(),
                 ),
-                ui.input_slider("selected_hour", "Hour of Day", value=12, min=0, max=23),
+                ui.input_slider(
+                    "selected_hour", "Hour of Day", value=12, min=0, max=23
+                ),
                 style=f"background-color: {sidebar_background_color};",
             ),
             ui.accordion_panel(
@@ -139,58 +137,41 @@ def sidebar(
                 ui.input_slider(
                     "selected_temperature",
                     "Temperature (°C)",
-                    value=int(
-                        terminal_weather.select("temperature_2m").mean().collect().item()
-                    ),
-                    min=int(
-                        terminal_weather.select("temperature_2m").min().collect().item() - 10
-                    ),
-                    max=int(
-                        terminal_weather.select("temperature_2m").max().collect().item() + 10
-                    ),
+                    value=12,
+                    min=-30,
+                    max=40,
                 ),
                 ui.input_slider(
                     "selected_precipitation",
                     "Precipitation (mm)",
-                    value=int(terminal_weather.select("precipitation").mean().collect().item()),
+                    value=0,
                     min=0,
-                    max=int(
-                        terminal_weather.select("precipitation").max().collect().item() + 10
-                    ),
+                    max=100,
                 ),
                 ui.input_slider(
                     "selected_cloud_cover",
                     "Cloud Cover (%)",
-                    value=int(terminal_weather.select("cloud_cover").mean().collect().item()),
+                    value=0,
                     min=0,
                     max=100,
                 ),
                 style=f"background-color: {sidebar_background_color};",
-
             ),
             ui.accordion_panel(
                 "Wind",
                 ui.input_slider(
                     "selected_wind_speed",
                     "Wind Speed",
-                    value=int(
-                        terminal_weather.select("wind_speed_10m").mean().collect().item()
-                    ),
+                    value=0,
                     min=0,
-                    max=int(
-                        terminal_weather.select("wind_speed_10m").max().collect().item() + 10
-                    ),
+                    max=100,
                 ),
                 ui.input_slider(
                     "selected_wind_gust",
                     "Wind Gusts",
-                    value=int(
-                        terminal_weather.select("wind_gusts_10m").mean().collect().item()
-                    ),
+                    value=0,
                     min=0,
-                    max=int(
-                        terminal_weather.select("wind_gusts_10m").max().collect().item() + 10
-                    ),
+                    max=100,
                 ),
                 ui.input_select(
                     "selected_wind_direction",
@@ -207,8 +188,7 @@ def sidebar(
                     },  # type: ignore
                 ),
                 style=f"background-color: {sidebar_background_color};",
-            )
-
+            ),
         ),
         bg=sidebar_background_color,
         width="400px",
@@ -216,17 +196,9 @@ def sidebar(
 
 
 @module.ui
-def model_explorer_ui(
-    vessel_verbose: pl.LazyFrame,
-    vessel_history: pl.LazyFrame,
-    terminal_weather: pl.LazyFrame,
-):
+def model_explorer_ui(con: Backend):
     return ui.layout_sidebar(
-        sidebar(
-            vessel_verbose=vessel_verbose,
-            vessel_history=vessel_history,
-            terminal_weather=terminal_weather,
-        ),
+        sidebar(con),
         # Value boxes
         ui.layout_column_wrap(
             ui.value_box(
@@ -262,60 +234,71 @@ def model_explorer_server(
     input: Inputs,
     output: Outputs,
     session: Session,
-    vessel_history: pl.LazyFrame,
-    vessel_verbose: pl.LazyFrame,
-    terminal_locations: pl.LazyFrame,
-    terminal_weather: pl.LazyFrame,
+    con: Backend,
 ):
+    # Read in the datasets that are small and used by several
+    # different parts of the server.
+    database_uri = os.environ["DATABASE_URI_PYTHON"]
+
+    vessel_verbose = pl.read_database_uri(
+        query="SELECT * FROM vessel_verbose_clean;",
+        uri=database_uri,
+        engine="adbc"
+    )
+
+    terminal_locations = pl.read_database_uri(
+        query="SELECT * FROM terminal_locations_clean;",
+        uri=database_uri,
+        engine="adbc"
+    )
+
     @reactive.calc
     def get_starting_and_ending_terminal() -> tuple[str, str]:
         route = input.selected_route()
-        logger.info(f"{route=}")
         start, end = [i.lower().strip() for i in route.split(" | ")]
-        logger.info(f"{start=}")
-        logger.info(f"{end=}")
         return start, end
 
+    @time_function
     @reactive.calc
     def filtered_vessel_history() -> pl.LazyFrame:
-        (
-            starting_terminal_name,
-            ending_terminal_name,
-        ) = get_starting_and_ending_terminal()
-        logger.info(
-            f"Filtering vessel history on {starting_terminal_name} and {ending_terminal_name}"
+        # fmt: off
+        starting_terminal_name, ending_terminal_name = get_starting_and_ending_terminal()
+
+        df = (
+            con
+            .table("vessel_history_clean").filter(
+                [
+                    _.Departing == starting_terminal_name,
+                    _.Arriving == ending_terminal_name
+                ]
+            )
+            .to_polars()
+            .lazy()
+            .with_columns(
+                (pl.col("ActualDepart") - pl.col("ScheduledDepart")).alias("Delay"),
+            )
         )
-        df = vessel_history.filter(
-            pl.col("Departing").eq(starting_terminal_name),
-            pl.col("Arriving").eq(ending_terminal_name),
-        )
+        # fmt: on
         return df
 
     @reactive.calc
     def get_selected_vessel_data() -> dict[str, Any]:
-        selected_vessel_data = (
-            vessel_verbose.filter(pl.col("VesselName") == input.selected_vessel_name())
-            .collect()
-            .to_dicts()[0]
-        )
-        return selected_vessel_data
+        selected_vessel_data = vessel_verbose.filter(pl.col("VesselName") == input.selected_vessel_name())
+        return selected_vessel_data.to_dicts()[0]
 
     @reactive.calc
+    @time_function
     def predict_delay() -> float:
         """
         The delay model is hosted on Posit Connect at this URL:
         https://connect.posit.it/content/823c479e-3d5e-4898-8801-a5c2cec97bb5
         """
-        logger.info("Predicting delay")
-
         # Based on the selected vessel name, get all of the data related to that
         # vessel.
         selected_vessel_data = (
             vessel_verbose.filter(pl.col("VesselName") == input.selected_vessel_name())
-            .collect()
             .to_dicts()[0]
         )
-        logger.info(f"Selected vessel data: {selected_vessel_data}")
 
         # Some of the vessels have not been rebuilt. When this applies, impute
         # the current year as the year rebuilt.
@@ -323,6 +306,9 @@ def model_explorer_server(
             year_rebuilt = selected_vessel_data["YearRebuilt"].year
         else:
             year_rebuilt = datetime.datetime.now().year
+
+        # TODO: after Michael published the API to Ferryland bring this code
+        # back into the fold
 
         prediction_input_data = {
             "Departing": get_starting_and_ending_terminal()[0],
@@ -356,20 +342,20 @@ def model_explorer_server(
             "arriving_wind_gusts_10m": input.selected_wind_gust(),
         }
 
-        logger.info(f"Prediction input data: {prediction_input_data}")
-
         # Make the prediction
-        prediction_results_df = predict(
-            vetiver_endpoint(
-                "https://connect.posit.it/content/823c479e-3d5e-4898-8801-a5c2cec97bb5/predict"
-            ),
-            pd.DataFrame.from_records([prediction_input_data]),
-            headers={"Authorization": f'Key {os.environ["CONNECT_API_KEY"]}'},
-        )
-        prediction_results_value = prediction_results_df.iloc[0, 0]
-        logger.info(f"{prediction_results_value=}")
+        # prediction_results_df = predict(
+        #     vetiver_endpoint(
+        #         "https://connect.posit.it/content/823c479e-3d5e-4898-8801-a5c2cec97bb5/predict"
+        #     ),
+        #     pd.DataFrame.from_records([prediction_input_data]),
+        #     headers={"Authorization": f'Key {os.environ["CONNECT_API_KEY"]}'},
+        # )
+        # prediction_results_value = prediction_results_df.iloc[0, 0]
 
-        return round(float(prediction_results_value), 2) # type: ignore
+        # return round(float(prediction_results_value), 2) # type: ignore
+
+        # TEMPORARY - return a random number as the prediction
+        return random.randint(-3, 23)
 
     @render.text
     def predicted_delay_text():
@@ -405,13 +391,11 @@ def model_explorer_server(
 
         starting_terminal_data = (
             terminal_locations.filter(pl.col("TerminalName").eq(starting_terminal_name))
-            .collect()
             .to_dicts()
         )[0]
 
         ending_terminal_data = (
             terminal_locations.filter(pl.col("TerminalName").eq(ending_terminal_name))
-            .collect()
             .to_dicts()
         )[0]
 
