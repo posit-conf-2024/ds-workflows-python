@@ -78,11 +78,14 @@ This is a relatively complex app. Lets walk through some the design principles a
 ```bash
 rsconnect deploy shiny \
   --title "Seattle Ferries #5 - Delay Prediction App" \
-  --exclude "./*" \
+  --exclude ".env" \
+  --exclude ".venv" \
+  --exclude ".ipynb_checkpoints" \
+  --exclude "manifest.json" \
   --exclude "test.ipynb" \
   -E DATABASE_HOST \
   -E DATABASE_PASSWORD_PYTHON \
-  -E DATABASE_PASSWORD_PYTHON \
+  -E DATABASE_USER_PYTHON \
   -E DATABASE_NAME_PYTHON \
   -E DATABASE_SCHEMA \
   -E DATABASE_URI_PYTHON \
@@ -102,7 +105,10 @@ Visit your deployed app and click on the settings icon.
 
 ```bash
 rsconnect write-manifest shiny \
-  --exclude "./*" \
+  --exclude ".env" \
+  --exclude ".venv" \
+  --exclude ".ipynb_checkpoints" \
+  --exclude "manifest.json" \
   --exclude "test.ipynb" \
    --overwrite \
    .

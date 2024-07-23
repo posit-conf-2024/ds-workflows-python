@@ -3,7 +3,7 @@
         "server_url": "https://pub.ferryland.posit.team/",
         "filename": "/home/samedwardes/ds-workflows-python/materials/05-shiny-app",
         "app_url": "https://pub.ferryland.posit.team/content/ae1a37c9-2bde-4382-a342-58e46b75fcd0/",
-        "app_id": "17",
+        "app_id": "ae1a37c9-2bde-4382-a342-58e46b75fcd0",
         "app_guid": "ae1a37c9-2bde-4382-a342-58e46b75fcd0",
         "title": "Seattle Ferries #5 - Delay Prediction App",
         "app_mode": "python-shiny",
