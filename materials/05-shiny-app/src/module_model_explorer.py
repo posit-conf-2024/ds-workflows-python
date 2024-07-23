@@ -1,9 +1,11 @@
 import datetime
+import random
 import json
 import os
 import random
 from typing import Any
 import ibis
+from ibis import _
 from ibis.backends.postgres import Backend
 
 import pandas as pd
@@ -19,19 +21,21 @@ from shinywidgets import output_widget, render_widget
 from vetiver.server import predict, vetiver_endpoint
 
 
-def get_route_options(vessel_history: pl.LazyFrame) -> dict:
+def get_route_options(con: Backend) -> dict:
     options_list = (
-        vessel_history.group_by("Departing", "Arriving")
-        .count()
-        .sort("count", descending=True)
-        .collect()
+        con
+        .table("vessel_history_clean")
+        .group_by(["Departing", "Arriving"])
+        .aggregate(n = _.Departing.count())
+        .order_by(_.n.desc())
+        .to_polars()
         .to_dicts()
     )
     options_dict = {}
     for i in options_list:
         arriving = i["Arriving"]
         departing = i["Departing"]
-        n_trips = i["count"]
+        n_trips = i["n"]
         value = f"{arriving} | {departing}"
         label = f"{arriving.title()} to {departing.title()} ({n_trips:,} trips)"
         options_dict[value] = label
@@ -94,6 +98,7 @@ def sidebar(
     vessel_history: pl.LazyFrame,
     vessel_verbose: pl.LazyFrame,
     terminal_weather: pl.LazyFrame,
+    con: Backend
 ):
     sidebar_background_color = "#f8f8f8"
 
@@ -105,7 +110,7 @@ def sidebar(
                 ui.input_select(
                     "selected_route",
                     "Route",
-                    get_route_options(vessel_history),
+                    get_route_options(con),
                 ),
                 # TODO: add button to reverse route
                 ui.input_select(
@@ -229,6 +234,7 @@ def model_explorer_ui(
             vessel_verbose=vessel_verbose,
             vessel_history=vessel_history,
             terminal_weather=terminal_weather,
+            con=con
         ),
         # Value boxes
         ui.layout_column_wrap(
@@ -282,17 +288,29 @@ def model_explorer_server(
 
     @reactive.calc
     def filtered_vessel_history() -> pl.LazyFrame:
-        (
-            starting_terminal_name,
-            ending_terminal_name,
-        ) = get_starting_and_ending_terminal()
-        logger.info(
-            f"Filtering vessel history on {starting_terminal_name} and {ending_terminal_name}"
+        # fmt: off
+        start_time = datetime.datetime.now()
+        starting_terminal_name, ending_terminal_name = get_starting_and_ending_terminal()
+        logger.info(f"Filtering vessel history on {starting_terminal_name} to {ending_terminal_name}...")
+
+        df = (
+            con
+            .table("vessel_history_clean").filter(
+                [
+                    _.Departing == starting_terminal_name,
+                    _.Arriving == ending_terminal_name
+                ]
+            )
+            .to_polars()
+            .lazy()
+            .with_columns(
+                (pl.col("ActualDepart") - pl.col("ScheduledDepart")).alias("Delay"),
+            )
         )
-        df = vessel_history.filter(
-            pl.col("Departing").eq(starting_terminal_name),
-            pl.col("Arriving").eq(ending_terminal_name),
-        )
+
+        end_time = datetime.datetime.now()
+        logger.info(f"Filtering vessel history on {starting_terminal_name} to {ending_terminal_name} complete ({end_time - start_time})")
+        # fmt: on
         return df
 
     @reactive.calc
@@ -362,18 +380,24 @@ def model_explorer_server(
 
         logger.info(f"Prediction input data: {prediction_input_data}")
 
-        # Make the prediction
-        prediction_results_df = predict(
-            vetiver_endpoint(
-                "https://connect.posit.it/content/823c479e-3d5e-4898-8801-a5c2cec97bb5/predict"
-            ),
-            pd.DataFrame.from_records([prediction_input_data]),
-            headers={"Authorization": f'Key {os.environ["CONNECT_API_KEY"]}'},
-        )
-        prediction_results_value = prediction_results_df.iloc[0, 0]
-        logger.info(f"{prediction_results_value=}")
+        # TEMPORARY - return a random number as the prediction
+        return random.randint(-3, 23)
 
-        return round(float(prediction_results_value), 2) # type: ignore
+        # TODO: after Micahel published the API to Ferryland bring this code
+        # back into the fold
+        #
+        # Make the prediction
+        # prediction_results_df = predict(
+        #     vetiver_endpoint(
+        #         "https://connect.posit.it/content/823c479e-3d5e-4898-8801-a5c2cec97bb5/predict"
+        #     ),
+        #     pd.DataFrame.from_records([prediction_input_data]),
+        #     headers={"Authorization": f'Key {os.environ["CONNECT_API_KEY"]}'},
+        # )
+        # prediction_results_value = prediction_results_df.iloc[0, 0]
+        # logger.info(f"{prediction_results_value=}")
+
+        # return round(float(prediction_results_value), 2) # type: ignore
 
     @render.text
     def predicted_delay_text():
