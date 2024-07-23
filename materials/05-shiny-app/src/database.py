@@ -12,8 +12,3 @@ def get_con() -> Backend:
         schema=os.environ["DATABASE_SCHEMA"],
     )
     return con
-
-
-def get_table(con: Backend, table_name: str) -> ibis.expr.types.relations.Table:
-    table = con.table(table_name)
-    return table
