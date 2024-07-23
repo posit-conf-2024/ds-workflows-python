@@ -197,12 +197,7 @@ def sidebar(con: Backend):
 
 
 @module.ui
-def model_explorer_ui(
-    vessel_verbose: pl.LazyFrame,
-    vessel_history: pl.LazyFrame,
-    terminal_weather: pl.LazyFrame,
-    con: Backend
-):
+def model_explorer_ui(con: Backend):
     return ui.layout_sidebar(
         sidebar(con),
         # Value boxes

@@ -49,13 +49,7 @@ end_date = vessel_history.select(pl.col("Date").max()).collect().get_column("Dat
 app_ui = ui.page_navbar(
     ui.nav_panel(
         "Model Explorer",
-        model_explorer_ui(
-            "model_explorer_module",
-            vessel_verbose=vessel_verbose,
-            vessel_history=vessel_history,
-            terminal_weather=terminal_weather,
-            con=con,
-        ),
+        model_explorer_ui("model_explorer_module", con=con)
     ),
     title="Seattle Ferry Model & Data Explorer",
 )
