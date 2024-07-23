@@ -4,11 +4,9 @@ import os
 import random
 from typing import Any
 
-import ibis
 import pandas as pd
 import plotly.express as px
 import polars as pl
-from click import style
 from ibis import _
 from ibis.backends.postgres import Backend
 from ipyleaflet import AntPath, AwesomeIcon, DivIcon, GeoJSON, Map, Marker
@@ -238,10 +236,21 @@ def model_explorer_server(
     session: Session,
     con: Backend,
 ):
-    # Note: for vessel_verbose I first have to read as pandas, then into polars. Reading
-    # straight into polars was throwing an error.
-    vessel_verbose = pl.DataFrame(con.table("vessel_verbose_clean").to_pandas())
-    terminal_locations = con.table("terminal_locations_clean").to_polars()
+    # Read in the datasets that are small and used by several
+    # different parts of the server.
+    database_uri = os.environ["DATABASE_URI_PYTHON"]
+
+    vessel_verbose = pl.read_database_uri(
+        query="SELECT * FROM vessel_verbose_clean;",
+        uri=database_uri,
+        engine="adbc"
+    )
+
+    terminal_locations = pl.read_database_uri(
+        query="SELECT * FROM terminal_locations_clean;",
+        uri=database_uri,
+        engine="adbc"
+    )
 
     @reactive.calc
     def get_starting_and_ending_terminal() -> tuple[str, str]:
@@ -275,7 +284,7 @@ def model_explorer_server(
     @reactive.calc
     def get_selected_vessel_data() -> dict[str, Any]:
         selected_vessel_data = vessel_verbose.filter(pl.col("VesselName") == input.selected_vessel_name())
-        logger.error(selected_vessel_data)
+        logger.error(selected_vessel_data.to_dicts()[0])
         return selected_vessel_data.to_dicts()[0]
 
     @reactive.calc

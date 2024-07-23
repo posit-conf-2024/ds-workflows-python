@@ -1,12 +1,13 @@
 shiny==0.10.2
 polars==0.20.31
+adbc-driver-postgresql==1.1.0
+pandas==2.2.2
+pyarrow==16.1.0
 ibis-framework[postgres]==9.1.0
-pins==0.8.6
+plotly==5.22.0
 ipyleaflet==0.19.1
 shinywidgets==0.3.2
 python-dotenv==1.0.1
 loguru==0.7.2
-pyarrow==16.1.0
-plotly==5.22.0
 vetiver==0.2.4
 ipykernel==6.29.5
