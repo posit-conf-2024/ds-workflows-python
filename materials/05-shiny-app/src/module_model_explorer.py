@@ -94,35 +94,25 @@ def get_weather_code_options() -> dict[int, str]:
     }
 
 
-def sidebar(
-    vessel_history: pl.LazyFrame,
-    vessel_verbose: pl.LazyFrame,
-    terminal_weather: pl.LazyFrame,
-    con: Backend
-):
+def sidebar(con: Backend):
     sidebar_background_color = "#f8f8f8"
+
+    vessel_names = (
+        con
+        .table("vessel_verbose_clean")
+        .select("VesselName")
+        .to_polars()
+        .get_column("VesselName")
+        .to_list()
+    )
 
     return ui.sidebar(
         ui.help_text("The parameters below are inputs to the Ferry Delay Prediction Model. Adjust the parameters to see how they impact the predicted delay time."),
         ui.accordion(
             ui.accordion_panel(
                 "Basic Information",
-                ui.input_select(
-                    "selected_route",
-                    "Route",
-                    get_route_options(con),
-                ),
-                # TODO: add button to reverse route
-                ui.input_select(
-                    "selected_vessel_name",
-                    "Vessel Name",
-                    vessel_verbose.select("VesselName")
-                    .unique()
-                    .sort("VesselName")
-                    .collect()
-                    .get_column("VesselName")
-                    .to_list(),
-                ),
+                ui.input_select("selected_route", "Route", get_route_options(con)),
+                ui.input_select("selected_vessel_name", "Vessel Name", vessel_names),
                 style=f"background-color: {sidebar_background_color};",
             ),
             ui.accordion_panel(
@@ -146,29 +136,21 @@ def sidebar(
                 ui.input_slider(
                     "selected_temperature",
                     "Temperature (°C)",
-                    value=int(
-                        terminal_weather.select("temperature_2m").mean().collect().item()
-                    ),
-                    min=int(
-                        terminal_weather.select("temperature_2m").min().collect().item() - 10
-                    ),
-                    max=int(
-                        terminal_weather.select("temperature_2m").max().collect().item() + 10
-                    ),
+                    value=12,
+                    min=-30,
+                    max=40,
                 ),
                 ui.input_slider(
                     "selected_precipitation",
                     "Precipitation (mm)",
-                    value=int(terminal_weather.select("precipitation").mean().collect().item()),
+                    value=0,
                     min=0,
-                    max=int(
-                        terminal_weather.select("precipitation").max().collect().item() + 10
-                    ),
+                    max=100,
                 ),
                 ui.input_slider(
                     "selected_cloud_cover",
                     "Cloud Cover (%)",
-                    value=int(terminal_weather.select("cloud_cover").mean().collect().item()),
+                    value=0,
                     min=0,
                     max=100,
                 ),
@@ -180,24 +162,16 @@ def sidebar(
                 ui.input_slider(
                     "selected_wind_speed",
                     "Wind Speed",
-                    value=int(
-                        terminal_weather.select("wind_speed_10m").mean().collect().item()
-                    ),
+                    value=0,
                     min=0,
-                    max=int(
-                        terminal_weather.select("wind_speed_10m").max().collect().item() + 10
-                    ),
+                    max=100,
                 ),
                 ui.input_slider(
                     "selected_wind_gust",
                     "Wind Gusts",
-                    value=int(
-                        terminal_weather.select("wind_gusts_10m").mean().collect().item()
-                    ),
+                    value=0,
                     min=0,
-                    max=int(
-                        terminal_weather.select("wind_gusts_10m").max().collect().item() + 10
-                    ),
+                    max=100,
                 ),
                 ui.input_select(
                     "selected_wind_direction",
@@ -230,12 +204,7 @@ def model_explorer_ui(
     con: Backend
 ):
     return ui.layout_sidebar(
-        sidebar(
-            vessel_verbose=vessel_verbose,
-            vessel_history=vessel_history,
-            terminal_weather=terminal_weather,
-            con=con
-        ),
+        sidebar(con),
         # Value boxes
         ui.layout_column_wrap(
             ui.value_box(
