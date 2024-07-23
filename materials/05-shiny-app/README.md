@@ -76,7 +76,17 @@ This is a relatively complex app. Lets walk through some the design principles a
 ### 🔄 Task 5 - Deploy to Connect
 
 ```bash
-rsconnect deploy shiny --title "Seattle Ferries - Delay Prediction App" --exclude ".cache" --exclude ".ruff_cache" --exclude ".posit" .
+rsconnect deploy shiny \
+  --title "Seattle Ferries #5 - Delay Prediction App" \
+  --exclude "./*" \
+  --exclude "test.ipynb" \
+  -E DATABASE_HOST \
+  -E DATABASE_PASSWORD_PYTHON \
+  -E DATABASE_PASSWORD_PYTHON \
+  -E DATABASE_NAME_PYTHON \
+  -E DATABASE_SCHEMA \
+  -E DATABASE_URI_PYTHON \
+  .
 ```
 
 ### 🔄 Task 6 - Connect runtime settings
@@ -91,5 +101,9 @@ Visit your deployed app and click on the settings icon.
 ### 🔄 Task 7 - Git backed deployment
 
 ```bash
-rsconnect write-manifest shiny --exclude ".cache" --exclude ".ruff_cache" --exclude ".posit" --exclude "**/*.pyc" --exclude ".env" --overwrite .
+rsconnect write-manifest shiny \
+  --exclude "./*" \
+  --exclude "test.ipynb" \
+   --overwrite \
+   .
 ```

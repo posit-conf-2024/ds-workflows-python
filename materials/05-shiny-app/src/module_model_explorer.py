@@ -284,7 +284,6 @@ def model_explorer_server(
     @reactive.calc
     def get_selected_vessel_data() -> dict[str, Any]:
         selected_vessel_data = vessel_verbose.filter(pl.col("VesselName") == input.selected_vessel_name())
-        logger.error(selected_vessel_data.to_dicts()[0])
         return selected_vessel_data.to_dicts()[0]
 
     @reactive.calc
