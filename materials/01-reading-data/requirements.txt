@@ -7,9 +7,7 @@ adbc-driver-postgresql==1.1.0
 anyio==4.3.0
     # via httpx
 appnope==0.1.4
-    # via
-    #   -r requirements.in
-    #   ipykernel
+    # via -r requirements.in
 asttokens==2.4.1
     # via stack-data
 certifi==2024.2.2
