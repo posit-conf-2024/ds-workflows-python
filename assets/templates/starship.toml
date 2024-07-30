@@ -1,0 +1,10 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+[package]
+disabled = true
+
+[git_branch]
+symbol = ""
+
+[container]
+disabled = true

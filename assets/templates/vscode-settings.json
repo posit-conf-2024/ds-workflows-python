@@ -1,0 +1,21 @@
+{
+    "[python]": {
+        "editor.rulers": [
+            80
+        ],
+        "editor.tabSize": 4
+    },
+    "autoDocstring.docstringFormat": "numpy",
+    "files.autoSave": "off",
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/.ipynb_checkpoints": true
+    },
+    "files.trimFinalNewlines": true,
+    "files.trimTrailingWhitespace": true,
+    "git.openRepositoryInParentFolders": "always",
+    "window.menuBarVisibility": "visible",
+    "projectManager.git.baseFolders": [
+        "~"
+    ]
+}
