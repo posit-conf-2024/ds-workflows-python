@@ -12,6 +12,7 @@ from ibis import _
 from ibis.backends.postgres import Backend
 from ipyleaflet import AntPath, AwesomeIcon, DivIcon, GeoJSON, Map, Marker
 from loguru import logger
+from posit.connect import Client
 from rich import inspect
 from rich.pretty import pprint
 from shiny import Inputs, Outputs, Session, module, reactive, render, ui
@@ -22,9 +23,11 @@ from src.timer import time_function
 
 
 def get_route_options(con: Backend) -> dict:
-    table_prefix = os.environ["TABLE_PREFIX"]
+    with Client() as client:
+        username = client.me.username
+
     options_list = (
-        con.table(f"{table_prefix}_vessel_history_clean")
+        con.table(f"{username}_vessel_history_clean")
         .group_by(["Departing", "Arriving"])
         .aggregate(n=_.Departing.count())
         .order_by(_.n.desc())
@@ -96,10 +99,12 @@ def get_weather_code_options() -> dict[int, str]:
 
 def sidebar(con: Backend):
     sidebar_background_color = "#f8f8f8"
-    table_prefix = os.environ["TABLE_PREFIX"]
+
+    with Client() as client:
+        username = client.me.username
 
     vessel_names = (
-        con.table(f"{table_prefix}_vessel_verbose_clean")
+        con.table(f"{username}_vessel_verbose_clean")
         .select("VesselName")
         .to_polars()
         .get_column("VesselName")
