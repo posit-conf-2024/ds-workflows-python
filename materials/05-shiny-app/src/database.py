@@ -2,6 +2,7 @@ import os
 
 import ibis
 from ibis.backends.postgres import Backend
+from loguru import logger
 
 def get_con() -> Backend:
     con = ibis.postgres.connect(
@@ -11,4 +12,5 @@ def get_con() -> Backend:
         password=os.environ["DATABASE_PASSWORD_PYTHON"],
         schema=os.environ["DATABASE_SCHEMA"],
     )
+    logger.info(f"{con=}")
     return con

@@ -241,7 +241,8 @@ def model_explorer_server(
 ):
     # Read in the datasets that are small and used by several
     # different parts of the server.
-    database_uri = os.environ["DATABASE_URI_PYTHON"]
+    database_uri = f"postgresql://{os.environ['DATABASE_USER_PYTHON']}:{os.environ['DATABASE_PASSWORD_PYTHON']}@{os.environ['DATABASE_HOST']}:5432/{os.environ['DATABASE_NAME_PYTHON']}?options=-csearch_path%3D{os.environ['DATABASE_SCHEMA']}"
+
 
     vessel_verbose = pl.read_database_uri(
         query="SELECT * FROM vessel_verbose_clean;",
