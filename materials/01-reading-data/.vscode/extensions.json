@@ -1,0 +1,15 @@
+{
+    "recommendations": [
+        "alefragnani.project-manager",
+        "mhutchie.git-graph",
+        "ms-python.python",
+        "ms-toolsai.jupyter",
+        "njpwerner.autodocstring",
+        "posit.shiny",
+        "posit.publisher",
+        "quarto.quarto",
+        "samedwardes.right-click-open-here",
+        "streetsidesoftware.code-spell-checker",
+        "sleistner.vscode-fileutils"
+    ]
+}
