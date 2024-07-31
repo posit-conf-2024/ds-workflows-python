@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import polars as pl
 from dotenv import load_dotenv
 from loguru import logger
@@ -9,7 +11,10 @@ from src.module_model_explorer import model_explorer_server, model_explorer_ui
 # ------------------------------------------------------------------------------
 # Config
 # ------------------------------------------------------------------------------
-load_dotenv(override=True)
+if Path(".env").exists():
+    logger.info("Loading .env")
+    load_dotenv(override=True)
+
 pl.Config(thousands_separator=True)
 
 # ------------------------------------------------------------------------------

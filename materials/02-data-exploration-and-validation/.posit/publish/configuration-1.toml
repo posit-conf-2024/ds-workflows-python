@@ -18,5 +18,4 @@ version = '1.5.54'
 engines = ['jupyter']
 
 [environment]
-TABLE_PREFIX = "samedwardes"
-# DATABASE_URI_PYTHON = "xxx"
+DATABASE_URI_PYTHON = "xxx"
