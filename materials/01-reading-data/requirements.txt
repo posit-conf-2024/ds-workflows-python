@@ -26,7 +26,7 @@ executing==2.0.1
     # via stack-data
 h11==0.14.0
     # via httpcore
-hishel==0.0.27
+hishel==0.0.30
     # via -r requirements.in
 httpcore==1.0.5
     # via httpx
@@ -62,14 +62,10 @@ mdurl==0.1.2
     # via markdown-it-py
 nest-asyncio==1.6.0
     # via ipykernel
-numpy==1.26.4
-    # via
-    #   pandas
-    #   pyarrow
+numpy==2.0.1
+    # via pyarrow
 packaging==24.0
     # via ipykernel
-pandas==2.2.2
-    # via -r requirements.in
 parso==0.8.4
     # via jedi
 pexpect==4.9.0
@@ -78,7 +74,7 @@ pip==24.0
     # via rsconnect-python
 platformdirs==4.2.1
     # via jupyter-core
-polars==1.1.0
+polars==1.3.0
     # via -r requirements.in
 prompt-toolkit==3.0.43
     # via ipython
@@ -88,7 +84,7 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
-pyarrow==16.1.0
+pyarrow==17.0.0
     # via -r requirements.in
 pygments==2.18.0
     # via
@@ -97,13 +93,9 @@ pygments==2.18.0
 pyjwt==2.8.0
     # via rsconnect-python
 python-dateutil==2.9.0.post0
-    # via
-    #   jupyter-client
-    #   pandas
+    # via jupyter-client
 python-dotenv==1.0.1
     # via -r requirements.in
-pytz==2024.1
-    # via pandas
 pyzmq==26.0.3
     # via
     #   ipykernel
@@ -142,7 +134,5 @@ typing-extensions==4.11.0
     #   adbc-driver-manager
     #   hishel
     #   rsconnect-python
-tzdata==2024.1
-    # via pandas
 wcwidth==0.2.13
     # via prompt-toolkit
