@@ -1,13 +1,10 @@
-ipykernel==6.29.4
-# Can't update to polars 1.x until pandera 0.21.x is released. See: https://github.com/unionai-oss/pandera/pull/1725
-polars==0.20.31
-pyarrow==16.1.0
-pandera==0.20.1
+jupyterlab==4.2.4
+polars==1.3.0
 adbc-driver-postgresql==1.1.0
+pyarrow==16.1.0
+pandera[polars]==0.20.3
 httpx==0.27.0
 rsconnect-python==1.23.0
 python-dotenv==1.0.1
 rich==13.7.1
 matplotlib==3.9.0
-# Jupyter is used for rendering the notebook with quarto.
-jupyter==1.0.0
