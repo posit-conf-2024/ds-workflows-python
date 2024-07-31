@@ -8,49 +8,49 @@
 	},
 	{
 		"name": "ds-workflows-python",
-		"rootPath": "/home/samedwardes/ds-workflows-python",
+		"rootPath": "~/ds-workflows-python",
 		"paths": [],
 		"tags": ["ds-workflows-python"],
 		"enabled": true
 	},
 	{
 		"name": "01-reading-data",
-		"rootPath": "/home/samedwardes/ds-workflows-python/materials/01-reading-data",
+		"rootPath": "~/ds-workflows-python/materials/01-reading-data",
 		"paths": [],
 		"tags": ["ds-workflows-python"],
 		"enabled": true
 	},
 	{
 		"name": "02-data-exploration-and-validation",
-		"rootPath": "/home/samedwardes/ds-workflows-python/materials/02-data-exploration-and-validation",
+		"rootPath": "~/ds-workflows-python/materials/02-data-exploration-and-validation",
 		"paths": [],
 		"tags": ["ds-workflows-python"],
 		"enabled": true
 	},
 	{
 		"name": "03-model-training",
-		"rootPath": "/home/samedwardes/ds-workflows-python/materials/03-model-training",
+		"rootPath": "~/ds-workflows-python/materials/03-model-training",
 		"paths": [],
 		"tags": ["ds-workflows-python"],
 		"enabled": true
 	},
 	{
 		"name": "04-model-monitoring",
-		"rootPath": "/home/samedwardes/ds-workflows-python/materials/04-model-monitoring",
+		"rootPath": "~/ds-workflows-python/materials/04-model-monitoring",
 		"paths": [],
 		"tags": ["ds-workflows-python"],
 		"enabled": true
 	},
 	{
 		"name": "05-shiny-app",
-		"rootPath": "/home/samedwardes/ds-workflows-python/materials/05-shiny-app",
+		"rootPath": "~/ds-workflows-python/materials/05-shiny-app",
 		"paths": [],
 		"tags": ["ds-workflows-python"],
 		"enabled": true
 	},
 	{
 		"name": "06-bonus-stuff",
-		"rootPath": "/home/samedwardes/ds-workflows-python/materials/06-bonus-stuff",
+		"rootPath": "~/ds-workflows-python/materials/06-bonus-stuff",
 		"paths": [],
 		"tags": ["ds-workflows-python"],
 		"enabled": true
