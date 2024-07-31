@@ -142,7 +142,7 @@ markupsafe==2.1.5
     # via
     #   jinja2
     #   nbconvert
-matplotlib==3.9.0
+matplotlib==3.9.1
     # via -r requirements.in
 matplotlib-inline==0.1.7
     # via
@@ -219,7 +219,7 @@ ptyprocess==0.7.0
     #   terminado
 pure-eval==0.2.3
     # via stack-data
-pyarrow==16.1.0
+pyarrow==17.0.0
     # via -r requirements.in
 pycparser==2.22
     # via cffi

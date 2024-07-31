@@ -5,15 +5,18 @@
 type = 'quarto'
 entrypoint = 'notebook.ipynb'
 validate = true
-has_parameters = false
-files = ['*', '!.env', '!.vscode/settings.json']
+files = ['notebook.ipynb', 'requirements.txt']
 title = 'Seattle Ferries #2 - Data exploration and validation'
 
 [python]
-version = '3.12.2'
+version = '3.12.4'
 package_file = 'requirements.txt'
 package_manager = 'pip'
 
 [quarto]
-version = '1.4.553'
+version = '1.5.54'
 engines = ['jupyter']
+
+[environment]
+TABLE_PREFIX = "samedwardes"
+# DATABASE_URI_PYTHON = "xxx"
