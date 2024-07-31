@@ -2,21 +2,21 @@
 # Please review and modify as needed. See the documentation for more options:
 # https://github.com/posit-dev/publisher/blob/main/docs/configuration.md
 '$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-schema-v3.json'
-type = 'quarto'
-entrypoint = 'notebook.ipynb'
+type = 'python-shiny'
+entrypoint = 'app.py'
 validate = true
-files = ['notebook.ipynb', 'requirements.txt']
-title = 'Seattle Ferries #2 - Data exploration and validation'
+files = ['app.py', 'src/**', 'requirements.txt']
+title = 'Seattle Ferries #5 - Delay Prediction App'
 
 [python]
 version = '3.12.4'
 package_file = 'requirements.txt'
 package_manager = 'pip'
 
-[quarto]
-version = '1.5.54'
-engines = ['jupyter']
-
 [environment]
 TABLE_PREFIX = "samedwardes"
-# DATABASE_URI_PYTHON = "xxx"
+DATABASE_HOST = 'demo01-staging-ferryland-20240702155133310700000001.cjiq6iow80rt.us-east-2.rds.amazonaws.com'
+DATABASE_USER_PYTHON = 'captain_py'
+DATABASE_NAME_PYTHON = 'pyferries'
+DATABASE_SCHEMA = 'production'
+# DATABASE_PASSWORD_PYTHON = 'xxx'

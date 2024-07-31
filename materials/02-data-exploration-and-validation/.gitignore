@@ -1,2 +1,4 @@
 /.quarto/
-tmp/
+email-preview/
+.output_metadata.json
+notebook_files/

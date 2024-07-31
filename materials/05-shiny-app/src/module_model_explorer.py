@@ -3,6 +3,7 @@ import json
 import os
 import random
 from typing import Any
+import os
 
 import pandas as pd
 import plotly.express as px
@@ -21,8 +22,9 @@ from src.timer import time_function
 
 
 def get_route_options(con: Backend) -> dict:
+    table_prefix = os.environ["TABLE_PREFIX"]
     options_list = (
-        con.table("vessel_history_clean")
+        con.table(f"{table_prefix}_vessel_history_clean")
         .group_by(["Departing", "Arriving"])
         .aggregate(n=_.Departing.count())
         .order_by(_.n.desc())
@@ -94,9 +96,10 @@ def get_weather_code_options() -> dict[int, str]:
 
 def sidebar(con: Backend):
     sidebar_background_color = "#f8f8f8"
+    table_prefix = os.environ["TABLE_PREFIX"]
 
     vessel_names = (
-        con.table("vessel_verbose_clean")
+        con.table(f"{table_prefix}_vessel_verbose_clean")
         .select("VesselName")
         .to_polars()
         .get_column("VesselName")
@@ -238,7 +241,8 @@ def model_explorer_server(
 ):
     # Read in the datasets that are small and used by several
     # different parts of the server.
-    database_uri = os.environ["DATABASE_URI_PYTHON"]
+    database_uri = f"postgresql://{os.environ['DATABASE_USER_PYTHON']}:{os.environ['DATABASE_PASSWORD_PYTHON']}@{os.environ['DATABASE_HOST']}:5432/{os.environ['DATABASE_NAME_PYTHON']}?options=-csearch_path%3D{os.environ['DATABASE_SCHEMA']}"
+
 
     vessel_verbose = pl.read_database_uri(
         query="SELECT * FROM vessel_verbose_clean;",

@@ -8,3 +8,4 @@ pyarrow==17.0.0
 rsconnect-python==1.23.0
 python-dotenv==1.0.1
 rich==13.7.1
+click==8.1.6

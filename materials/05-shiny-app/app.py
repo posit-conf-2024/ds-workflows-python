@@ -9,7 +9,7 @@ from src.module_model_explorer import model_explorer_server, model_explorer_ui
 # ------------------------------------------------------------------------------
 # Config
 # ------------------------------------------------------------------------------
-load_dotenv()
+load_dotenv(override=True)
 pl.Config(thousands_separator=True)
 
 # ------------------------------------------------------------------------------
