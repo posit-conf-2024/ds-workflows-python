@@ -14,8 +14,10 @@ certifi==2024.2.2
     # via
     #   httpcore
     #   httpx
-click==8.1.7
-    # via rsconnect-python
+click==8.1.6
+    # via
+    #   -r requirements.in
+    #   rsconnect-python
 comm==0.2.2
     # via ipykernel
 debugpy==1.8.1
