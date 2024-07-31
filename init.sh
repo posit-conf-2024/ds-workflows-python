@@ -1,8 +1,11 @@
 #!/bin/bash
 
 # Clone this repo
-# git clone https://github.com/posit-conf-2024/ds-workflows-python.git
-# cd ds-workflows-python
+git clone https://github.com/posit-conf-2024/ds-workflows-python.git
+cd ds-workflows-python
+
+# Create local bin
+mkdir -p ~/.local/bin
 
 # Add required stuff to your .bashrc
 echo "" >> ~/.bashrc && echo "" >> ~/.bashrc
