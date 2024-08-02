@@ -29,7 +29,7 @@ alias pipinit='python -m venv .venv && source .venv/bin/activate && python -m pi
 alias kernelinit='python -m ipykernel install --name $(basename $(pwd)) --display-name $(basename $(pwd)) --user'
 
 # PATH
-export PATH="${HOME}/.local/bin:/opt/python/3.12.4/bin:${PATH}"
+export PATH="${HOME}/.local/bin:/opt/python/default/bin:${PATH}"
 
 # Starship
 eval "$(starship init bash)"

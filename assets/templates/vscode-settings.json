@@ -17,5 +17,6 @@
     "window.menuBarVisibility": "visible",
     "projectManager.git.baseFolders": [
         "~"
-    ]
+    ],
+    "remote.autoForwardPorts": false
 }
