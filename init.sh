@@ -23,11 +23,13 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 source $HOME/.cargo/env
 
 # Copy project manager extension config
-mkdir -p ~/.vscode-server/User/globalStorage/alefragnani.project-manager
-cp assets/templates/projects.json ~/.vscode-server/User/globalStorage/alefragnani.project-manager/projects.json
+mkdir -p ~/.local/share/code-server/User/globalStorage/alefragnani.project-manager/
+cp assets/templates/projects.json \
+    ~/.local/share/code-server/User/globalStorage/alefragnani.project-manager/projects.json
 
 # Copy VS Code Settings
-mkdir -p ~/.vscode-server/User/
-cp assets/templates/vscode-settings.json ~/.vscode-server/User/settings.json
+mkdir -p ~/.local/share/code-server/User/
+cp assets/templates/vscode-settings.json \
+    ~/.local/share/code-server/User/settings.json
 
 echo "Setup complete!"
