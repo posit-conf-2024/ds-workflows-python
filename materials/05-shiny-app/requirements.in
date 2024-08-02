@@ -11,3 +11,4 @@ python-dotenv==1.0.1
 loguru==0.7.2
 vetiver==0.2.4
 ipykernel==6.29.5
+posit-sdk==0.3.1
