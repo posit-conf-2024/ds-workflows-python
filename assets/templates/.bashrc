@@ -36,3 +36,7 @@ eval "$(starship init bash)"
 
 # Cargo
 . "$HOME/.cargo/env"
+
+# Package Manager Configuration
+export UV_INDEX_URL='https://packagemanager.posit.co/pypi/latest/simple'
+export PIP_INDEX_URL='https://packagemanager.posit.co/pypi/latest/simple'
