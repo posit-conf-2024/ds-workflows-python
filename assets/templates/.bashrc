@@ -19,6 +19,7 @@ export DATABASE_URI_PYTHON="postgresql://${DATABASE_USER_PYTHON}:${DATABASE_PASS
 
 # uv
 alias uvinit='uv venv && source .venv/bin/activate'
+alias uvcompile='uv pip compile requirements.in --quiet --output-file requirements.txt'
 alias uvsync='uv pip compile requirements.in --quiet --output-file requirements.txt && uv pip sync requirements.txt'
 
 # pip
@@ -32,3 +33,6 @@ export PATH="${HOME}/.local/bin:/opt/python/3.12.4/bin:${PATH}"
 
 # Starship
 eval "$(starship init bash)"
+
+# Cargo
+. "$HOME/.cargo/env"
