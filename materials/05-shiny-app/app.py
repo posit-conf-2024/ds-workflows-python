@@ -26,7 +26,13 @@ con = get_con()
 # UI logic
 # ------------------------------------------------------------------------------
 app_ui = ui.page_navbar(
-    ui.nav_panel("Model Explorer", model_explorer_ui("model_explorer_module", con=con)),
+    ui.nav_panel(
+        "Model Explorer",
+        model_explorer_ui(
+            "model_explorer_module",
+            con=con
+        )
+    ),
     title="Seattle Ferry Model & Data Explorer",
 )
 
