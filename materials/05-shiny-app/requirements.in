@@ -2,8 +2,10 @@ shiny==0.10.2
 polars==0.20.31
 adbc-driver-postgresql==1.1.0
 pandas==2.2.2
+ibis-framework==9.1.0
+psycopg2-binary==2.9.9
 pyarrow==16.1.0
-ibis-framework[postgres]==9.1.0
+pyarrow-hotfix==0.6
 plotly==5.22.0
 ipyleaflet==0.19.1
 shinywidgets==0.3.2
@@ -12,3 +14,4 @@ loguru==0.7.2
 vetiver==0.2.4
 ipykernel==6.29.5
 posit-sdk==0.3.1
+great-tables==0.10.0

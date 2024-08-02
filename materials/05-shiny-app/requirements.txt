@@ -21,6 +21,8 @@ asttokens==2.4.1
     # via stack-data
 atpublic==4.1.0
     # via ibis-framework
+babel==2.15.0
+    # via great-tables
 bidict==0.23.1
     # via ibis-framework
 branca==0.7.2
@@ -44,6 +46,8 @@ comm==0.2.2
     # via
     #   ipykernel
     #   ipywidgets
+commonmark==0.9.1
+    # via great-tables
 debugpy==1.8.2
     # via ipykernel
 decorator==5.1.1
@@ -54,12 +58,16 @@ fastapi==0.1.17
     # via vetiver
 fsspec==2024.6.1
     # via pins
+great-tables==0.10.0
+    # via -r requirements.in
 h11==0.14.0
     # via
     #   httpcore
     #   uvicorn
 htmltools==0.5.3
-    # via shiny
+    # via
+    #   great-tables
+    #   shiny
 httpcore==1.0.5
     # via httpx
 httpx==0.27.0
@@ -74,10 +82,13 @@ idna==3.7
     #   httpx
     #   requests
 importlib-metadata==8.2.0
-    # via pins
+    # via
+    #   great-tables
+    #   pins
 importlib-resources==6.4.0
     # via
     #   adbc-driver-postgresql
+    #   great-tables
     #   pins
 ipykernel==6.29.5
     # via -r requirements.in
@@ -138,6 +149,7 @@ nest-asyncio==1.6.0
     #   vetiver
 numpy==1.26.4
     # via
+    #   great-tables
     #   ibis-framework
     #   pandas
     #   pyarrow
@@ -187,8 +199,8 @@ prompt-toolkit==3.0.36
     #   questionary
 psutil==6.0.0
     # via ipykernel
-psycopg2==2.9.9
-    # via ibis-framework
+psycopg2-binary==2.9.9
+    # via -r requirements.in
 ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.3
@@ -198,7 +210,9 @@ pyarrow==16.1.0
     #   -r requirements.in
     #   ibis-framework
 pyarrow-hotfix==0.6
-    # via ibis-framework
+    # via
+    #   -r requirements.in
+    #   ibis-framework
 pydantic==2.8.2
     # via
     #   fastapi
@@ -303,6 +317,7 @@ traittypes==0.2.1
 typing-extensions==4.12.2
     # via
     #   adbc-driver-manager
+    #   great-tables
     #   htmltools
     #   ibis-framework
     #   pydantic

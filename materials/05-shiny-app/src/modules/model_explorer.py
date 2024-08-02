@@ -17,7 +17,7 @@ from rich import inspect
 from rich.pretty import pprint
 from shiny import Inputs, Outputs, Session, module, reactive, render, ui
 from shinywidgets import output_widget, render_widget
-from vetiver.server import predict, vetiver_endpoint
+# from vetiver.server import predict, vetiver_endpoint
 
 from src.timer import time_function
 
@@ -481,7 +481,7 @@ def model_explorer_server(
             marker = Marker(
                 location=(terminal["Latitude"], terminal["Longitude"]),
                 draggable=False,
-                title=f"{terminal["TerminalName"].title()} ({terminal["Latitude"]}, {terminal["Longitude"]})",
+                title=f'{terminal["TerminalName"].title()} ({terminal["Latitude"]}, {terminal["Longitude"]})',
                 icon=ferry_icon,
             )
             map.add_layer(marker)
