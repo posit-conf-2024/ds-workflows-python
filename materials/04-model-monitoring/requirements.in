@@ -1,3 +1,8 @@
 jupyter==1.0.0
 jupyterlab==4.2.4
+pandas==2.2.2
+pins==0.8.6
+plotly==5.23.0
+posit-sdk==0.3.1
+scikit-learn==1.5.1
 vetiver==0.2.5
