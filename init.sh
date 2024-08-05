@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# Clone this repo
-git clone https://github.com/posit-conf-2024/ds-workflows-python.git
-cd ds-workflows-python
-
 # Create local bin
 mkdir -p ~/.local/bin
 
