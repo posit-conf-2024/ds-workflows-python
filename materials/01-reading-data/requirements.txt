@@ -21,7 +21,7 @@ click==8.1.7
     # via rsconnect-python
 comm==0.2.2
     # via ipykernel
-debugpy==1.8.2
+debugpy==1.8.5
     # via ipykernel
 decorator==5.1.1
     # via ipython
@@ -96,13 +96,13 @@ pygments==2.18.0
     # via
     #   ipython
     #   rich
-pyjwt==2.8.0
+pyjwt==2.9.0
     # via rsconnect-python
 python-dateutil==2.9.0.post0
     # via jupyter-client
 python-dotenv==1.0.1
     # via -r requirements.in
-pyzmq==26.0.3
+pyzmq==26.1.0
     # via
     #   ipykernel
     #   jupyter-client

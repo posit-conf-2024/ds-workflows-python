@@ -10,10 +10,9 @@ title = 'Seattle Ferries #1 - Raw data'
 description = "Read the raw data from Washington Ferry API and the Open Meteo weather API. The raw data is saved to the internal Postgres database."
 
 [python]
-version = '3.12.4'
+version = '3.12.3'
 package_file = 'requirements.txt'
 package_manager = 'pip'
 
 [environment]
-DATABASE_URI_PYTHON = "xxx"
-WSDOT_ACCESS_CODE = "xxx"
+# WSDOT_ACCESS_CODE = "xxx"
