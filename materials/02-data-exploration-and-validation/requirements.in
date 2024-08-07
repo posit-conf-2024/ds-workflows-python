@@ -8,4 +8,4 @@ rsconnect-python==1.23.0
 posit-sdk==0.3.1
 python-dotenv==1.0.1
 rich==13.7.1
-matplotlib==3.9.1
+matplotlib==3.9.1.post1
