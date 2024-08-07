@@ -34,10 +34,29 @@ If you are interested, here are some articles and videos that compare these popu
 
 ### 🔄 Task 1 - Understand Shiny Essentials
 
-Lets walk through the first page of the docs: <https://shiny.posit.co/py/docs/overview.html>. To get started with Shiny you need to understand the two main components:
+To get started with Shiny you need to understand the three key concepts:
 
-- UI
-- Server
+1. UI
+2. Server
+3. Reactivity
+
+Lets look at this simple example: <https://shinylive.io/py/editor/#code=NobwRAdghgtgpmAXGKAHVA6VBPMAaMAYwHsIAXOcpMAMwCdiYACAZwAsBLCbJjmVYnTJMAgujxM6lACZw6EgK4cAOhFVpUAfSVMAvEyVYoAcziaaHAB5xpAClVNHBjhi6oFZTSwA2HWXXswADcob2V8JnCAZV9-Jm8oACM4MIiYLl0ABgkYKEtdAEZM7KYQ7wU4XQBWTIBKPAcnQ2IPd08KS08guUSoMj5Anz85TTLw2tUJtQhZGlY5boC3DwkWsjaJFjgWFg5SWsRGxwABKRm5DA6yI6ZZ1liRstsDm6dJODIFOggmGmiHuilUIVRBMEDLMgYJ61AC+4VU6nQelE6FsGm0HE2CzktTAMIAukA>
+
+```bash
+from shiny import App, render, ui
+
+app_ui = ui.page_fixed(
+    ui.input_slider("val", "Slider label", min=0, max=100, value=50),
+    ui.output_text_verbatim("slider_val")
+)
+
+def server(input, output, session):
+    @render.text
+    def slider_val():
+        return f"Slider value: {input.val()}"
+
+app = App(app_ui, server)
+```
 
 ### 🔄 Task 2 - Shiny "Express" vs. "Core"
 
@@ -50,14 +69,13 @@ As always, start by creating a virtual environment and install the dependencies:
 ```bash
 uv venv
 source .venv/bin/activate
-uv pip compile requirements.in --quiet --output-file requirements.txt
 uv pip sync requirements.txt
 ```
 
 To run the Shiny app, use the following command:
 
 ```bash
-shiny run app.py
+shiny run app.py --reload
 ```
 
 You can preview the app using the Posit Workbench extension in VS Code (<https://docs.posit.co/ide/server-pro/user/vs-code/guide/proxying-web-servers.html>.)
@@ -68,10 +86,12 @@ Alternatively, you can use the Shiny for Python VS Code extension to preview the
 
 This is a relatively complex app. Lets walk through some the design principles and most important components of the app.
 
-- Leverage databases for compute.
-- Do as little compute as possible!
-- Use modules for code organization (<https://shiny.posit.co/py/docs/modules.html>).
-- Understanding session context vs. global context (<https://shiny.posit.co/py/docs/sessions.html>).
+- Reactivity walkthrough (e.g. how changing the selected route flows through the app)
+- Using the ferry model with [vetiver](https://vetiver.posit.co/)
+- Leverage databases for compute with [ibis](https://ibis-project.org/)
+- Using [loguru](https://loguru.readthedocs.io/en/stable/overview.html) for logging
+- Maps with [ipyleaflet](https://pypi.org/project/ipyleaflet/)
+- Use modules for code organization (<https://shiny.posit.co/py/docs/modules.html>)
 
 ### 🔄 Task 5 - Deploy to Connect
 
