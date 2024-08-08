@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "ferryland"
+version = "0.1.0"
+description = "Download ferry data from Washington state."
+authors = ["SamEdwardes <sam.edwardes@posit.co>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+httpx = "^0.27.0"
+polars = "^1.4.1"
+pyarrow = "^17.0.0"
+rich = "^13.7.1"
+
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.5.7"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
