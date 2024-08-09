@@ -1,0 +1,12 @@
+default:
+  @just --list
+
+test:
+  poetry run tests/test_vessel_apis.py
+
+lint:
+  poetry run ruff check .
+  
+format:
+  poetry run ruff check --select I --fix .
+  poetry run ruff format .
