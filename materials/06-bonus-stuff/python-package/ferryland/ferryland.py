@@ -11,8 +11,11 @@ class VesselsAPI:
     """
     API endpoint for VessselsAPI: https://www.wsdot.wa.gov/ferries/api/vessels/rest/help
     """
+
     base_url: str = "https://www.wsdot.wa.gov/Ferries/API/Vessels/rest"
-    wsdot_access_code: str = field(default_factory=lambda: os.environ["WSDOT_ACCESS_CODE"])
+    wsdot_access_code: str = field(
+        default_factory=lambda: os.environ["WSDOT_ACCESS_CODE"]
+    )
     params: dict = field(init=False)
 
     def __post_init__(self):
@@ -25,14 +28,13 @@ class VesselsAPI:
             r = client.get(endpoint)
             data = r.json()
             df = pl.DataFrame(data)
-            return df 
+            return df
 
     def cache_flush_date(self) -> pl.DataFrame:
         endopint = "/cacheflushdate"
         return self.call_api(endopint)
 
-    def vessel_accommodations(
-        self, vessel_id: str | None = None) -> pl.DataFrame:
+    def vessel_accommodations(self, vessel_id: str | None = None) -> pl.DataFrame:
         if vessel_id:
             endpoint = f"/vesselaccommodations/{vessel_id}"
         else:
@@ -62,8 +64,7 @@ class VesselsAPI:
             url = f"{self.base_url}/vesselhistory"
         return self.call_api(url, timeout=30.0)
 
-    def vessel_locations(
-        self, vessel_id: str | None = None) -> pl.DataFrame:
+    def vessel_locations(self, vessel_id: str | None = None) -> pl.DataFrame:
         if vessel_id:
             endpoint = f"/vessellocations/{vessel_id}"
         else:
@@ -77,11 +78,9 @@ class VesselsAPI:
             endpoint = "/vesselstats"
         return self.call_api(endpoint)
 
-    def vessel_verbose(
-        self, vessel_id: str | None = None) -> pl.DataFrame:
+    def vessel_verbose(self, vessel_id: str | None = None) -> pl.DataFrame:
         if vessel_id:
             endpoint = f"/vesselverbose/{vessel_id}"
         else:
             endpoint = "/vesselverbose"
         return self.call_api(endpoint)
-
