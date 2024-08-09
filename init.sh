@@ -20,6 +20,9 @@ echo "" >> ~/.bashrc && echo "" >> ~/.bashrc
 cat assets/templates/.bashrc >> ~/.bashrc
 echo "" >> ~/.bashrc && echo "" >> ~/.bashrc
 
+# Copy Connect Credentials dotfile template
+cp assets/templates/.connect-credentials ~/.connect-credentials
+
 # Install starship for a better terminal
 heading "Installing starship"
 wget --no-verbose --directory-prefix '/tmp' https://github.com/starship/starship/releases/download/v1.20.1/starship-x86_64-unknown-linux-musl.tar.gz \
