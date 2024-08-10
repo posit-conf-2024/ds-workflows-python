@@ -2,4 +2,3 @@ rsconnect-python/
 *.html
 .posit/
 *_files/
-vetiver-app.py
