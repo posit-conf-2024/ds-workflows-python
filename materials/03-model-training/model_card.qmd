@@ -26,8 +26,6 @@ if Path(".env").exists():
     load_dotenv()
 
 board = pins.board_connect(
-    server_url=os.environ["CONNECT_SERVER"], 
-    api_key=os.environ["CONNECT_API_KEY"],
     allow_pickle_read=True,
 )
 
@@ -41,6 +39,14 @@ import pandas as pd
 import plotly.express as px
 from sklearn import metrics
 import vetiver
+from sklearn.base import TransformerMixin, BaseEstimator
+
+class DenseTransformer(TransformerMixin, BaseEstimator):
+    def fit(self, X, y=None, **params):
+        return self
+
+    def transform(self, X, y=None, **params):
+        return X.toarray()
 
 v = vetiver.VetiverModel.from_pin(board, f"{username}/ferry_delay")
 # your pin will most likely have a version already, but we will make one here
@@ -57,8 +63,7 @@ A [model card](https://doi.org/10.1145/3287560.3287596) provides brief, transpar
 ```{python}
 #| echo: false
 model_desc = v.description
-num_features = len(v.prototype.construct().dict())
-# num_features = len(v.prototype.schema().get("properties"))
+num_features = len(v.prototype.schema().get("properties"))
 
 display(Markdown(f"""
 - A {model_desc} using {num_features} feature{'s'[:num_features^1]}.
@@ -130,23 +135,14 @@ pprint(v.prototype.construct().schema().get("properties"))
 
 import polars as pl
 
-uri = f"postgresql://{os.environ["DB_USER"]}:{os.environ["DB_PASSWORD"]}@{os.environ["DB_HOST"]}:{os.environ["DB_PORT"]}/{os.environ["DB_NAME"]}"
+uri = os.environ["DATABASE_URI_PYTHON"]
 
-test_data = pl.read_database_uri(uri=uri, query="SELECT * FROM test_data", engine="adbc")
+test_data = pl.read_database_uri(uri=uri, query=f"SELECT * FROM {username}_test_data", engine="adbc")
 ```
 
 ```{python}
 #| echo: false
 ## compute predictions for your evaluation data
-
-# TODO: add relevant data
-# from vetiver.data import sacramento
-
-# sacramento["preds"] = v.model.predict(sacramento.drop(columns=["price"]))
-# metric_set = [metrics.mean_absolute_error, metrics.mean_squared_error, metrics.r2_score]
-
-# for metric in metric_set:
-#     print(metric.__qualname__, ": ", metric(y_pred=sacramento["preds"], y_true=sacramento["price"]))
 
 test_data = test_data.with_columns(preds = v.model.predict(test_data.drop("LogDelay")))
 
