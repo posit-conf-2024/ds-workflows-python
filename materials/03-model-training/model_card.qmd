@@ -3,6 +3,7 @@ title: "Model Card: your model title"
 output:
   html_document
 ---
+
 ```{python}
 #| echo: false
 from IPython.display import display, Markdown
@@ -26,13 +27,12 @@ if Path(".env").exists():
     load_dotenv()
 
 board = pins.board_connect(
-    server_url=os.environ["CONNECT_SERVER"], 
-    api_key=os.environ["CONNECT_API_KEY"],
     allow_pickle_read=True,
 )
 
 with Client() as client:
     username = client.me.username
+username
 ```
 
 ```{python}
@@ -41,6 +41,14 @@ import pandas as pd
 import plotly.express as px
 from sklearn import metrics
 import vetiver
+from sklearn.base import TransformerMixin, BaseEstimator
+
+class DenseTransformer(TransformerMixin, BaseEstimator):
+    def fit(self, X, y=None, **params):
+        return self
+
+    def transform(self, X, y=None, **params):
+        return X.toarray()
 
 v = vetiver.VetiverModel.from_pin(board, f"{username}/ferry_delay")
 # your pin will most likely have a version already, but we will make one here
@@ -57,15 +65,16 @@ A [model card](https://doi.org/10.1145/3287560.3287596) provides brief, transpar
 ```{python}
 #| echo: false
 model_desc = v.description
-num_features = len(v.prototype.construct().dict())
-# num_features = len(v.prototype.schema().get("properties"))
+num_features = len(v.prototype.schema().get("properties"))
 
 display(Markdown(f"""
-- A {model_desc} using {num_features} feature{'s'[:num_features^1]}.
+- {model_desc} using {num_features} feature{'s'[:num_features^1]}.
 """))
 ```
+
 - More details about how model was developed and what it is predicting
 - More details on feature engineering and/or data preprocessing for model
+
 ```{python}
 #| echo: false
 version = v_meta.version
@@ -130,29 +139,20 @@ pprint(v.prototype.construct().schema().get("properties"))
 
 import polars as pl
 
-uri = f"postgresql://{os.environ["DB_USER"]}:{os.environ["DB_PASSWORD"]}@{os.environ["DB_HOST"]}:{os.environ["DB_PORT"]}/{os.environ["DB_NAME"]}"
+uri = os.environ["DATABASE_URI_PYTHON"]
 
-test_data = pl.read_database_uri(uri=uri, query="SELECT * FROM test_data", engine="adbc")
+ferry_trips = pl.read_database_uri(uri=uri, query=f"SELECT * FROM {username}_test_data", engine="adbc")
 ```
 
 ```{python}
 #| echo: false
 ## compute predictions for your evaluation data
 
-# TODO: add relevant data
-# from vetiver.data import sacramento
-
-# sacramento["preds"] = v.model.predict(sacramento.drop(columns=["price"]))
-# metric_set = [metrics.mean_absolute_error, metrics.mean_squared_error, metrics.r2_score]
-
-# for metric in metric_set:
-#     print(metric.__qualname__, ": ", metric(y_pred=sacramento["preds"], y_true=sacramento["price"]))
-
-test_data = test_data.with_columns(preds = v.model.predict(test_data.drop("LogDelay")))
+ferry_trips = ferry_trips.with_columns(preds = v.model.predict(ferry_trips.drop("LogDelay")))
 
 metric_set = [metrics.mean_absolute_error, metrics.mean_squared_error, metrics.r2_score]
 for metric in metric_set:
-    print(metric.__qualname__, ": ", metric(y_pred=test_data["preds"], y_true=test_data["LogDelay"]))
+    print(metric.__qualname__, ": ", metric(y_pred=ferry_trips["preds"], y_true=ferry_trips["LogDelay"]))
 ```
 
 ## Disaggregated model performance
@@ -160,29 +160,29 @@ for metric in metric_set:
 ```{python}
 #| echo: false
 
-# TODO: fix
-# dmp = pd.DataFrame()
-# for metric in metric_set:
-#     dmp[metric.__qualname__] = sacramento.groupby("type")\
-#         .apply(lambda x: metric(y_pred=x["preds"], y_true=x["price"]))
-# dmp
+dmp = pd.DataFrame()
+for metric in metric_set:
+    dmp[metric.__qualname__] = (
+        ferry_trips.to_pandas()
+        .groupby("Vessel")
+        .apply(lambda df: metric(y_pred=df["preds"], y_true=df["LogDelay"]))
+    )
+dmp
 ```
 
 ## Visualize model performance
 
 ```{python}
-# TODO
-# performance = px.scatter(sacramento, x="price", y = "preds", facet_row="type", trendline="ols")
-# performance.update_yaxes(matches=None)
-# performance.show()
+performance = px.scatter(ferry_trips, x="LogDelay", y = "preds", facet_row="Vessel", trendline="ols")
+performance.update_yaxes(matches=None)
+performance.show()
 ```
 
 ## Make a custom plot
 
 ```{python}
-# TODO
-# custom = px.violin(sacramento, x="beds", y = "price")
-# custom.show()
+custom = px.violin(ferry_trips, x="departing_wind_speed_10m", y = "LogDelay")
+custom.show()
 ```
 
 :::
