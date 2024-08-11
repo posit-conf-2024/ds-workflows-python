@@ -3,6 +3,7 @@ title: "Model Card: your model title"
 output:
   html_document
 ---
+
 ```{python}
 #| echo: false
 from IPython.display import display, Markdown
@@ -31,6 +32,7 @@ board = pins.board_connect(
 
 with Client() as client:
     username = client.me.username
+username
 ```
 
 ```{python}
@@ -66,11 +68,13 @@ model_desc = v.description
 num_features = len(v.prototype.schema().get("properties"))
 
 display(Markdown(f"""
-- A {model_desc} using {num_features} feature{'s'[:num_features^1]}.
+- {model_desc} using {num_features} feature{'s'[:num_features^1]}.
 """))
 ```
+
 - More details about how model was developed and what it is predicting
 - More details on feature engineering and/or data preprocessing for model
+
 ```{python}
 #| echo: false
 version = v_meta.version
@@ -137,18 +141,18 @@ import polars as pl
 
 uri = os.environ["DATABASE_URI_PYTHON"]
 
-test_data = pl.read_database_uri(uri=uri, query=f"SELECT * FROM {username}_test_data", engine="adbc")
+ferry_trips = pl.read_database_uri(uri=uri, query=f"SELECT * FROM {username}_test_data", engine="adbc")
 ```
 
 ```{python}
 #| echo: false
 ## compute predictions for your evaluation data
 
-test_data = test_data.with_columns(preds = v.model.predict(test_data.drop("LogDelay")))
+ferry_trips = ferry_trips.with_columns(preds = v.model.predict(ferry_trips.drop("LogDelay")))
 
 metric_set = [metrics.mean_absolute_error, metrics.mean_squared_error, metrics.r2_score]
 for metric in metric_set:
-    print(metric.__qualname__, ": ", metric(y_pred=test_data["preds"], y_true=test_data["LogDelay"]))
+    print(metric.__qualname__, ": ", metric(y_pred=ferry_trips["preds"], y_true=ferry_trips["LogDelay"]))
 ```
 
 ## Disaggregated model performance
@@ -156,29 +160,29 @@ for metric in metric_set:
 ```{python}
 #| echo: false
 
-# TODO: fix
-# dmp = pd.DataFrame()
-# for metric in metric_set:
-#     dmp[metric.__qualname__] = sacramento.groupby("type")\
-#         .apply(lambda x: metric(y_pred=x["preds"], y_true=x["price"]))
-# dmp
+dmp = pd.DataFrame()
+for metric in metric_set:
+    dmp[metric.__qualname__] = (
+        ferry_trips.to_pandas()
+        .groupby("Vessel")
+        .apply(lambda df: metric(y_pred=df["preds"], y_true=df["LogDelay"]))
+    )
+dmp
 ```
 
 ## Visualize model performance
 
 ```{python}
-# TODO
-# performance = px.scatter(sacramento, x="price", y = "preds", facet_row="type", trendline="ols")
-# performance.update_yaxes(matches=None)
-# performance.show()
+performance = px.scatter(ferry_trips, x="LogDelay", y = "preds", facet_row="Vessel", trendline="ols")
+performance.update_yaxes(matches=None)
+performance.show()
 ```
 
 ## Make a custom plot
 
 ```{python}
-# TODO
-# custom = px.violin(sacramento, x="beds", y = "price")
-# custom.show()
+custom = px.violin(ferry_trips, x="departing_wind_speed_10m", y = "LogDelay")
+custom.show()
 ```
 
 :::
