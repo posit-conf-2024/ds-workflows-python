@@ -2,3 +2,4 @@ rsconnect-python/
 *.html
 .posit/
 *_files/
+api/requirements.txt
