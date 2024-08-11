@@ -3,8 +3,8 @@ import json
 import os
 import random
 from typing import Any
-import os
 
+import httpx
 import pandas as pd
 import plotly.express as px
 import polars as pl
@@ -17,7 +17,6 @@ from rich import inspect
 from rich.pretty import pprint
 from shiny import Inputs, Outputs, Session, module, reactive, render, ui
 from shinywidgets import output_widget, render_widget
-# from vetiver.server import predict, vetiver_endpoint
 
 from src.timer import time_function
 
@@ -248,17 +247,12 @@ def model_explorer_server(
     # different parts of the server.
     database_uri = f"postgresql://{os.environ['DATABASE_USER_PYTHON']}:{os.environ['DATABASE_PASSWORD_PYTHON']}@{os.environ['DATABASE_HOST']}:5432/{os.environ['DATABASE_NAME_PYTHON']}?options=-csearch_path%3D{os.environ['DATABASE_SCHEMA']}"
 
-
     vessel_verbose = pl.read_database_uri(
-        query="SELECT * FROM vessel_verbose_clean;",
-        uri=database_uri,
-        engine="adbc"
+        query="SELECT * FROM vessel_verbose_clean;", uri=database_uri, engine="adbc"
     )
 
     terminal_locations = pl.read_database_uri(
-        query="SELECT * FROM terminal_locations_clean;",
-        uri=database_uri,
-        engine="adbc"
+        query="SELECT * FROM terminal_locations_clean;", uri=database_uri, engine="adbc"
     )
 
     @reactive.calc
@@ -292,7 +286,9 @@ def model_explorer_server(
 
     @reactive.calc
     def get_selected_vessel_data() -> dict[str, Any]:
-        selected_vessel_data = vessel_verbose.filter(pl.col("VesselName") == input.selected_vessel_name())
+        selected_vessel_data = vessel_verbose.filter(
+            pl.col("VesselName") == input.selected_vessel_name()
+        )
         return selected_vessel_data.to_dicts()[0]
 
     @reactive.calc
@@ -302,12 +298,12 @@ def model_explorer_server(
         The delay model is hosted on Posit Connect at this URL:
         https://connect.posit.it/content/823c479e-3d5e-4898-8801-a5c2cec97bb5
         """
+        logger.info("Predicting ferry delay...")
         # Based on the selected vessel name, get all of the data related to that
         # vessel.
-        selected_vessel_data = (
-            vessel_verbose.filter(pl.col("VesselName") == input.selected_vessel_name())
-            .to_dicts()[0]
-        )
+        selected_vessel_data = vessel_verbose.filter(
+            pl.col("VesselName") == input.selected_vessel_name()
+        ).to_dicts()[0]
 
         # Some of the vessels have not been rebuilt. When this applies, impute
         # the current year as the year rebuilt.
@@ -316,55 +312,65 @@ def model_explorer_server(
         else:
             year_rebuilt = datetime.datetime.now().year
 
-        # TODO: after Michael published the API to Ferryland bring this code
-        # back into the fold
-
         prediction_input_data = {
-            "Departing": get_starting_and_ending_terminal()[0],
-            "Arriving": get_starting_and_ending_terminal()[1],
-            "Month": input.selected_date().month,
-            "Weekday": input.selected_date().weekday(),
-            "Hour": input.selected_hour(),
-            "ClassName": selected_vessel_data["ClassName"],
-            "SpeedInKnots": selected_vessel_data["SpeedInKnots"],
-            "EngineCount": selected_vessel_data["EngineCount"],
-            "Horsepower": selected_vessel_data["Horsepower"],
-            "MaxPassengerCount": selected_vessel_data["MaxPassengerCount"],
+            "Vessel": str(selected_vessel_data["VesselName"]),
+            "Departing": str(get_starting_and_ending_terminal()[0]),
+            "Arriving": str(get_starting_and_ending_terminal()[1]),
+            "Month": 3,
+            "Weekday": int(input.selected_date().weekday()),
+            "Hour": int(input.selected_hour()),
+            "ClassName": str(selected_vessel_data["ClassName"]),
+            "SpeedInKnots": int(selected_vessel_data["SpeedInKnots"]),
+            "EngineCount": int(selected_vessel_data["EngineCount"]),
+            "Horsepower": int(selected_vessel_data["Horsepower"]),
+            "MaxPassengerCount": int(selected_vessel_data["MaxPassengerCount"]),
             "PassengerOnly": None,  # selected_vessel_data["PassengerOnly"],
             "FastFerry": None,  # selected_vessel_data["FastFerry"],
-            "PropulsionInfo": selected_vessel_data["PropulsionInfo"],
-            "YearBuilt": selected_vessel_data["YearBuilt"].year,
-            "YearRebuilt": year_rebuilt,
-            "departing_weather_code": int(input.selected_weather_code()),
-            "departing_temperature_2m": input.selected_temperature(),
-            "departing_precipitation": None,  # input.selected_precipitation(),
-            "departing_cloud_cover": input.selected_cloud_cover(),
-            "departing_wind_speed_10m": input.selected_wind_speed(),
+            "PropulsionInfo": str(selected_vessel_data["PropulsionInfo"]),
+            "YearBuilt": int(selected_vessel_data["YearBuilt"].year),
+            "YearRebuilt": int(year_rebuilt),
+            "departing_weather_code": str(input.selected_weather_code()),
+            "departing_temperature_2m": int(input.selected_temperature()),
+            "departing_precipitation": int(input.selected_precipitation()),
+            "departing_cloud_cover": int(input.selected_cloud_cover()),
+            "departing_wind_speed_10m": int(input.selected_wind_speed()),
             "departing_wind_direction_10m": int(input.selected_wind_direction()),
-            "departing_wind_gusts_10m": input.selected_wind_gust(),
-            "arriving_weather_code": int(input.selected_weather_code()),
-            "arriving_temperature_2m": input.selected_temperature(),
-            "arriving_precipitation": None,  # input.selected_precipitation(),
-            "arriving_cloud_cover": input.selected_cloud_cover(),
-            "arriving_wind_speed_10m": input.selected_wind_speed(),
+            "departing_wind_gusts_10m": int(input.selected_wind_gust()),
+            "arriving_weather_code": str(input.selected_weather_code()),
+            "arriving_temperature_2m": int(input.selected_temperature()),
+            "arriving_precipitation": int(input.selected_precipitation()),
+            "arriving_cloud_cover": int(input.selected_cloud_cover()),
+            "arriving_wind_speed_10m": int(input.selected_wind_speed()),
             "arriving_wind_direction_10m": int(input.selected_wind_direction()),
-            "arriving_wind_gusts_10m": input.selected_wind_gust(),
+            "arriving_wind_gusts_10m": int(input.selected_wind_gust()),
         }
 
         # Make the prediction
-        # prediction_results_df = predict(
-        #     vetiver_endpoint(
-        #         "https://connect.posit.it/content/823c479e-3d5e-4898-8801-a5c2cec97bb5/predict"
-        #     ),
-        #     pd.DataFrame.from_records([prediction_input_data]),
-        #     headers={"Authorization": f'Key {os.environ["CONNECT_API_KEY"]}'},
-        # )
-        # prediction_results_value = prediction_results_df.iloc[0, 0]
+        endpoint_url = os.environ["FERRY_MODEL_API_URL"]
 
-        # return round(float(prediction_results_value), 2) # type: ignore
+        headers = {
+            "Authorization": f'Key {os.environ["CONNECT_API_KEY"]}',
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
 
-        # TEMPORARY - return a random number as the prediction
-        return random.randint(-3, 23)
+        with httpx.Client() as client:
+            response = httpx.post(
+                endpoint_url, headers=headers, json=[prediction_input_data]
+            )
+
+        logger.info(f"{response=}")
+
+        if response.status_code != 200:
+            logger.error(prediction_input_data)
+            logger.error(f"{response.text}")
+            logger.error(response.request.url)
+            logger.error(response.request.headers)
+            logger.error(response.request.content)
+            return random.randint(-3, 23)
+        else:
+            logger.info(f"Model response: {response.json()}")
+            return round(response.json()["predict"][0], 1)
 
     @render.text
     def predicted_delay_text():
@@ -399,13 +405,15 @@ def model_explorer_server(
         ) = get_starting_and_ending_terminal()
 
         starting_terminal_data = (
-            terminal_locations.filter(pl.col("TerminalName").eq(starting_terminal_name))
-            .to_dicts()
+            terminal_locations.filter(
+                pl.col("TerminalName").eq(starting_terminal_name)
+            ).to_dicts()
         )[0]
 
         ending_terminal_data = (
-            terminal_locations.filter(pl.col("TerminalName").eq(ending_terminal_name))
-            .to_dicts()
+            terminal_locations.filter(
+                pl.col("TerminalName").eq(ending_terminal_name)
+            ).to_dicts()
         )[0]
 
         # Remember latitude runs east -> west
