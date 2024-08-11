@@ -9,14 +9,9 @@ files = ['app.py', 'src/**', 'requirements.txt']
 title = 'Seattle Ferries #5 - Delay Prediction App'
 
 [python]
-version = '3.12.4'
+version = '3.12.3'
 package_file = 'requirements.txt'
 package_manager = 'pip'
 
 [environment]
-TABLE_PREFIX = "samedwardes"
-DATABASE_HOST = 'demo01-staging-ferryland-20240702155133310700000001.cjiq6iow80rt.us-east-2.rds.amazonaws.com'
-DATABASE_USER_PYTHON = 'captain_py'
-DATABASE_NAME_PYTHON = 'pyferries'
-DATABASE_SCHEMA = 'production'
-# DATABASE_PASSWORD_PYTHON = 'xxx'
+FERRY_MODEL_API_URL = "https://pub.ferryland.posit.team/content/c03788e0-f0ac-4e1b-8e66-ab2e02b037dc/predict"
