@@ -13,7 +13,6 @@ jupyter: python3
 #| tags: [parameters]
 
 # import model and metadata
-
 import pins
 from IPython.display import display, Markdown, IFrame
 from datetime import datetime, timedelta

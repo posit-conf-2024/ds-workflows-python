@@ -2,16 +2,24 @@
 
 A Python package for interacting with the Washington State Department of Transportation's (WSDOT) traffic API: https://wsdot.wa.gov/traffic/api/.
 
+## Install
+
+Install ferryland:
+
+```bash
+pip install --index-url https://pkg.ferryland.posit.team/git-python/latest/simple --extra-index-url https://packagemanager.posit.co/pypi/latest/simple ferryland
+```
+
 ## Usage
 
 ```python
 >>> from datetime import date
->>> 
+>>>
 >>> from ferryland.ferryland import VesselsAPI
->>> 
->>> 
+>>>
+>>>
 >>> vessels_api = VesselsAPI()
->>> 
+>>>
 >>> vessel_accommodations = vessels_api.vessel_accommodations()
 >>> print(vessel_accommodations)
 shape: (21, 14)
@@ -33,7 +41,7 @@ shape: (21, 14)
 │          ┆                 ┆             ┆              ┆   ┆                   ┆            ┆                                 ┆ Todd Pacific Ship… │
 │ 38       ┆ 38              ┆ Yakima      ┆ YAK          ┆ … ┆ true              ┆ false      ┆ The MV Yakima has elevator acc… ┆                    │
 └──────────┴─────────────────┴─────────────┴──────────────┴───┴───────────────────┴────────────┴─────────────────────────────────┴────────────────────┘
->>> 
+>>>
 >>> vessel_history = vessels_api.vessel_history(
 ...     vessel_name="Spokane",
 ...     date_start=date(2024, 1, 1),
@@ -62,7 +70,7 @@ shape: (178, 8)
 │ 21       ┆ Spokane ┆ Kingston  ┆ Edmonds  ┆ /Date(1704697800000-0800)/ ┆ /Date(1704697899000-0800)/ ┆ /Date(1704699131000-0800)/ ┆ /Date(1704697800000-0800)/ │
 │ 21       ┆ Spokane ┆ Edmonds   ┆ Kingston ┆ /Date(1704699900000-0800)/ ┆ /Date(1704699983000-0800)/ ┆ /Date(1704701188000-0800)/ ┆ /Date(1704699900000-0800)/ │
 └──────────┴─────────┴───────────┴──────────┴────────────────────────────┴────────────────────────────┴────────────────────────────┴────────────────────────────┘
->>> 
+>>>
 >>> vessel_verbose = vessels_api.vessel_verbose()
 >>> print(vessel_verbose)
 shape: (21, 39)
@@ -83,7 +91,7 @@ shape: (21, 39)
 │ 37       ┆ 37              ┆ Wenatchee   ┆ WEN          ┆ … ┆ null        ┆ null             ┆ false          ┆ null                            │
 │ 38       ┆ 38              ┆ Yakima      ┆ YAK          ┆ … ┆ 2000        ┆ null             ┆ false          ┆ null                            │
 └──────────┴─────────────────┴─────────────┴──────────────┴───┴─────────────┴──────────────────┴────────────────┴─────────────────────────────────┘
->>> 
+>>>
 ```
 
 ## Package Development 101
