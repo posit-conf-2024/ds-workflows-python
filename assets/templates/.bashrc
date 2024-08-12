@@ -23,8 +23,8 @@ export DATABASE_URI_PYTHON="postgresql://${DATABASE_USER_PYTHON}:${DATABASE_PASS
 
 # uv
 alias uvinit='uv venv && source .venv/bin/activate'
-alias uvcompile='uv pip compile requirements.in --quiet --output-file requirements.txt'
-alias uvsync='uv pip compile requirements.in --quiet --output-file requirements.txt && uv pip sync requirements.txt'
+alias uvcompile='uv pip compile requirements.in --quiet --upgrade --output-file requirements.txt'
+alias uvsync='uv pip compile requirements.in --quiet --upgrade --output-file requirements.txt && uv pip sync requirements.txt'
 
 # pip
 alias pipinit='python -m venv .venv && source .venv/bin/activate && python -m pip install --upgrade pip wheel setuptools'
