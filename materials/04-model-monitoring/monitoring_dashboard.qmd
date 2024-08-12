@@ -1,5 +1,5 @@
 ---
-title: "Monitoring dashboard"
+title: "Ferry delays: Monitoring dashboard"
 format:
   dashboard:
     orientation: columns
@@ -82,11 +82,13 @@ ferry_trips_new = ferry_trips_new.with_columns(
 # Model info
 
 ## Column
-### Row {height="33%"}
+### Row {height="100px"}
 ::: {.valuebox}
 `{python} v.description`
 
+:::::: {line-height="1.5"}
 `{python} v.model_name`
+::::::
 :::
 
 ::: {.valuebox}
@@ -105,7 +107,7 @@ Model details
 `{python} v.prototype.construct().schema().get("properties")`
 ```
 
-- The model was created by ...
+- The model was created by Michael Beigelmacher <michael.beigelmacher@posit.co>
 
 # Model metrics
 
@@ -155,7 +157,10 @@ Write your own code to make visualizations or tables with the new validation dat
 
 ```{python}
 from IPython.display import IFrame
-IFrame(f'https://pub.ferryland.posit.team/{username}/ferry_delay/', width='100%', height=640)
+
+api_url = os.getenv("API_URL", f"https://pub.ferryland.posit.team/{username}/ferry_delay/")
+
+IFrame(api_url, width='100%', height=640)
 ```
 ---
 
