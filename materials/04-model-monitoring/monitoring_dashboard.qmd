@@ -1,5 +1,5 @@
 ---
-title: "Monitoring dashboard"
+title: "Ferry delays: Monitoring dashboard"
 format:
   dashboard:
     orientation: columns
@@ -23,6 +23,15 @@ from vetiver import VetiverModel, compute_metrics, plot_metrics
 from sklearn.metrics import recall_score, accuracy_score
 from posit.connect import Client
 
+from sklearn.base import TransformerMixin, BaseEstimator
+
+class DenseTransformer(TransformerMixin, BaseEstimator):
+    def fit(self, X, y=None, **params):
+        return self
+
+    def transform(self, X, y=None, **params):
+        return X.toarray()
+
 with Client() as client:
     username = client.me.username
 
@@ -36,30 +45,49 @@ days_old = datetime.today() - datetime.strptime(v_meta.created, "%Y%m%dT%H%M%SZ"
 ## the next few lines are an example model, here is a place to
 ## add any code you need to import new data and make predictions
 
-# import new data to track performance over time
-raw = "https://colorado.rstudio.com/rsc"
-paths = {"new-data": "inspections-new-data/"}
-board = pins.board_url(raw, paths, allow_pickle_read=True)
-inspections_new = board.pin_read("new-data")
+import os
+import polars as pl
 
-# make predictions
-inspections_new["preds"] = v.model.predict(
-    inspections_new.drop(columns=["results", "aka_name", "inspection_date"])
+db_uri = os.environ["DATABASE_URI_PYTHON"]
+
+# import new data to track performance over time
+ferry_trips_new = pl.read_database_uri(
+    query=f"SELECT * FROM {username}_monitoring_data;", 
+    uri=db_uri, 
+    engine="adbc"
 )
 
+# # make predictions
+ferry_trips_new = ferry_trips_new.with_columns(
+    preds = v.model.predict(ferry_trips_new.drop("LogDelay"))
+)
+
+```
+
+```{python}
+#| include: false
+ferry_trips_new["LogDelay"].plot.hist()
+```
+
+```{python}
 # map results
-inspections_new["preds"] = inspections_new["preds"].map({"PASS": 0, "FAIL": 1})
-inspections_new["results"] = inspections_new["results"].map({"PASS": 0, "FAIL": 1})
+# map trips as late if delay is longer than 5 minutes (300 seconds)
+ferry_trips_new = ferry_trips_new.with_columns(
+    pl.col("preds") > 5.7,
+    (pl.col("LogDelay") > 5.7).alias("late"),
+)
 ```
 
 # Model info
 
 ## Column
-### Row {height="33%"}
+### Row {height="100px"}
 ::: {.valuebox}
 `{python} v.description`
 
+:::::: {line-height="1.5"}
 `{python} v.model_name`
+::::::
 :::
 
 ::: {.valuebox}
@@ -78,7 +106,7 @@ Model details
 `{python} v.prototype.construct().schema().get("properties")`
 ```
 
-- The model was created by ...
+- The model was created by Michael Beigelmacher <michael.beigelmacher@posit.co>
 
 # Model metrics
 
@@ -86,15 +114,15 @@ Model details
 ```{python}
 import itables
 
-td = timedelta(weeks = 4)
+td = timedelta(weeks = 1)
 metric_set = [accuracy_score, recall_score]
 
 metrics_df = compute_metrics(
-    data = inspections_new,
-    date_var = "inspection_date",
+    data = ferry_trips_new.to_pandas(),
+    date_var = "Date",
     period = td,
     metric_set = metric_set,
-    truth = "results",
+    truth = "late",
     estimate = "preds"
   )
 itables.show(metrics_df)
@@ -113,7 +141,7 @@ You can add custom information and metrics here.
 # Explore validation data
 
 ```{python}
-fig = px.histogram(inspections_new, x = "facility_type")
+fig = px.histogram(ferry_trips_new, x = "Vessel")
 fig.show()
 ```
 
@@ -128,7 +156,10 @@ Write your own code to make visualizations or tables with the new validation dat
 
 ```{python}
 from IPython.display import IFrame
-IFrame('https://colorado.posit.co/rsc/chicago-inspections-python', width=750, height=350)
+
+api_url = os.getenv("API_URL", f"https://pub.ferryland.posit.team/{username}/ferry_delay/")
+
+IFrame(api_url, width='100%', height=640)
 ```
 ---
 

@@ -1,1 +1,3 @@
 *.html
+*_files
+monitoring_dashboard.ipynb

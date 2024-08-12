@@ -1,5 +1,6 @@
 rsconnect-python/
 *.html
-.posit/
+.posit/publish/deployments/
 *_files/
 api/requirements.txt
+model_card.ipynb
