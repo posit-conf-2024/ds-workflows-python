@@ -72,8 +72,9 @@ display(Markdown(f"""
 """))
 ```
 
-- More details about how model was developed and what it is predicting
-- More details on feature engineering and/or data preprocessing for model
+- The model is a histogram gradient boosted regressor for predicting the log delay in ferry departures from terminals around the Seattle area.
+
+- The model uses a variety of data, including weather data, details about the vessel construction, occupants and maintenance, as well as the day of the week and time of the day.
 
 ```{python}
 #| echo: false
@@ -89,29 +90,30 @@ display(Markdown(f"""
 """))
 ```
 
-- Citation and/or license details for the model
-- If you have questions about this model, please contact PERSON@ORG.ORG
+- This model uses publicly available data provided by the [Washington State Department of Transportation](https://wsdot.wa.gov/) and weather data by [Open Meteo](https://open-meteo.com/)
+
+- If you have questions about this model, please contact Michael Beigelmacher <michael.beigelmacher@posit.co>
 
 ## Intended use
 
-- The primary intended uses of this model are ...
-- The primary intended users of this model are ...
-- Some use cases are out of scope for this model, such as ...
+- This model was built as part of the solutions for the teaching exercise of "Data Science Workflows - Python Focus" workshop at Posit Conference 2024.
+
+- The sole purpose of this model is to teach workshop students how to use [vetiver](https://vetiver.rstudio.com/) and [Posit Connect](https://posit.co/products/enterprise/connect/) as part of a python oriented data science workflow. It should not be considered deployment ready; and any further use of this model should update the model features and conduct performace tuning. 
 
 ## Important aspects/factors
 
-- Aspects or factors (demographic, environmental, technical) that are relevant to the context of this model are ...
-- In evaluating this model, we examined aspects such as ...
+- There are no demographic, environmental or technical aspect relevant to this model.
 
 ## Metrics
 
-- The metrics used to evaluate this model are ...
-- These metrics are computed via ...
-- We chose these metrics because ...
+- The metrics used to evaluate this model are mean squared error, mean absolute error and r2 score. 
+- These metrics are computed via sklearn.metrics.
+- We chose these metrics because they are simple and easy to understand
 
 ## Training data & evaluation data
 
-- The training dataset for this model was ...
+- The training dataset for this model was constructed using ferry trips departure data, vessel details and weather data, all joined together.
+
 - The training dataset for this model has the "prototype" or signature:
 ```{python}
 #| echo: false
@@ -121,8 +123,9 @@ from rich.pretty import pprint
 pprint(v.prototype.construct().schema().get("properties"))
 ```
 
-- The evaluation dataset used in this model card is ...
-- We chose this evaluation data because ...
+- The evaluation dataset used in this model card is the same as derived for the training data, but a distrinct subset of the same source data.
+
+- We chose this evaluation data because it was easy to work with and suited the purposes of this workshop.
 
 
 ## Quantitative analyses
@@ -189,10 +192,9 @@ custom.show()
 
 ## Ethical considerations
 
-- We considered ...
+- The data for this model is publicly available.
 
 ## Caveats & recommendations
 
-- This model does ...
-- This model does not ...
-- We recommend ...
+- This model does not aim to provide useful predictions and is for pedagogical purposes only.
+
