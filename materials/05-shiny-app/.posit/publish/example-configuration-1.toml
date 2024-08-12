@@ -14,4 +14,4 @@ package_file = 'requirements.txt'
 package_manager = 'pip'
 
 [environment]
-FERRY_MODEL_API_URL = "https://pub.ferryland.posit.team/content/c03788e0-f0ac-4e1b-8e66-ab2e02b037dc/predict"
+FERRY_MODEL_API_URL = "https://pub.ferryland.posit.team/content/be872b09-090f-4522-856b-e3b15cb800f4/predict"

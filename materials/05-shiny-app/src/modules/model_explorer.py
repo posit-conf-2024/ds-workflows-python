@@ -135,7 +135,7 @@ def sidebar(con: Backend):
                 style=f"background-color: {sidebar_background_color};",
             ),
             ui.accordion_panel(
-                "Wether Basics",
+                "Weather Basics",
                 ui.input_select(
                     "selected_weather_code",
                     "Weather Code",
@@ -316,8 +316,7 @@ def model_explorer_server(
             "Vessel": str(selected_vessel_data["VesselName"]),
             "Departing": str(get_starting_and_ending_terminal()[0]),
             "Arriving": str(get_starting_and_ending_terminal()[1]),
-            "Month": 3,
-            "Weekday": int(input.selected_date().weekday()),
+            "Weekday": int(input.selected_date().weekday() + 1),
             "Hour": int(input.selected_hour()),
             "ClassName": str(selected_vessel_data["ClassName"]),
             "SpeedInKnots": int(selected_vessel_data["SpeedInKnots"]),
