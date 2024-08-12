@@ -1,0 +1,99 @@
+{
+  "version": 1,
+  "locale": "en_US.UTF-8",
+  "metadata": {
+    "appmode": "python-shiny",
+    "entrypoint": "app"
+  },
+  "python": {
+    "version": "3.11.9",
+    "package_manager": {
+      "name": "pip",
+      "version": "24.1.2",
+      "package_file": "requirements.txt"
+    }
+  },
+  "files": {
+    "requirements.txt": {
+      "checksum": "f41c95dc3f9e5e3ea4b156e40a17c084"
+    },
+    ".gitignore": {
+      "checksum": "b07f4c19d5c8d97c526e4b23fcfd816d"
+    },
+    ".posit/publish/configuration-1.toml": {
+      "checksum": "32da3e14404dce4a1bbd27638b72d9b6"
+    },
+    ".posit/publish/deployments/deployment-1.toml": {
+      "checksum": "b2116362dea6a2a384ab5c9413668142"
+    },
+    ".posit/publish/deployments/example-deployment-1.toml": {
+      "checksum": "2d27cc46b79ba6aa2b4aaf16b737dfef"
+    },
+    ".posit/publish/example-configuration-1.toml": {
+      "checksum": "64972997d924b08fdb690867dca5156b"
+    },
+    ".ruff_cache/.gitignore": {
+      "checksum": "07813ad49b7c958916325086d422ca91"
+    },
+    ".ruff_cache/0.5.7/16715236925947046810": {
+      "checksum": "568aace92a59f4226ee6a57de0338023"
+    },
+    ".ruff_cache/CACHEDIR.TAG": {
+      "checksum": "4b50dc490ca121c935cec9c15273aa95"
+    },
+    "README.md": {
+      "checksum": "c4ea3ba04001b4684a96bf7d12fc05e2"
+    },
+    "app.py": {
+      "checksum": "c0a2a5e0eea1e5719fd3f8b740132eec"
+    },
+    "imgs/ferry-vs-python.png": {
+      "checksum": "a6b03f02c53bcfc4d6d631a8d6045713"
+    },
+    "imgs/shiny-for-python.png": {
+      "checksum": "c959f9838fb1a53a15bdb8225e4b149c"
+    },
+    "requirements.in": {
+      "checksum": "2a62e52b4294d98955654b36c82aae79"
+    },
+    "src/__pycache__/database.cpython-310.pyc": {
+      "checksum": "7110e00c86efd4e2b15153edb0b0fea4"
+    },
+    "src/__pycache__/database.cpython-312.pyc": {
+      "checksum": "e5b1fb628bdb11b44a9f2daec286f89d"
+    },
+    "src/__pycache__/module_model_explorer.cpython-312.pyc": {
+      "checksum": "b39902d2739ebe68095786146a764478"
+    },
+    "src/__pycache__/timer.cpython-310.pyc": {
+      "checksum": "d9dbcf30a6a29e73b4cb49049ac27e0d"
+    },
+    "src/__pycache__/timer.cpython-312.pyc": {
+      "checksum": "202fbe9209f2fb21480b31ff6910cc9b"
+    },
+    "src/database.py": {
+      "checksum": "f351d2e041cebebce7883eb9fdb395dc"
+    },
+    "src/modules/__pycache__/data_summary.cpython-310.pyc": {
+      "checksum": "d5466855b48f5935ac64bb19e67f04df"
+    },
+    "src/modules/__pycache__/data_summary.cpython-312.pyc": {
+      "checksum": "0dc5d746bf65f930c066706869cf5fde"
+    },
+    "src/modules/__pycache__/model_explorer.cpython-310.pyc": {
+      "checksum": "3fb3cec6ea8789cf6707500035eda3d5"
+    },
+    "src/modules/__pycache__/model_explorer.cpython-312.pyc": {
+      "checksum": "0220f79ab68883963bd0ebce0e135e4e"
+    },
+    "src/modules/data_summary.py": {
+      "checksum": "e6d9789d5b3c82c4df2c4c96a6b2f5cb"
+    },
+    "src/modules/model_explorer.py": {
+      "checksum": "45c7ba998ad74aac129fdc61e85afa8c"
+    },
+    "src/timer.py": {
+      "checksum": "520f689a27c204c1d403b5a4316295ec"
+    }
+  }
+}
