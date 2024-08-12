@@ -3,3 +3,4 @@ rsconnect-python/
 .posit/
 *_files/
 api/requirements.txt
+model_card.ipynb
