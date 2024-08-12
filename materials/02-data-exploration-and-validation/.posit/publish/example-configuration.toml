@@ -7,6 +7,7 @@ entrypoint = 'notebook.ipynb'
 validate = true
 files = ['notebook.ipynb', 'requirements.txt']
 title = 'Seattle Ferries #2 - Data exploration and validation'
+description = 'Tidy the ferry data and save tidy data back to the database.'
 
 [python]
 version = '3.12.3'

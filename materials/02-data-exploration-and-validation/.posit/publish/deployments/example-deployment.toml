@@ -2,14 +2,14 @@
 '$schema' = 'https://cdn.posit.co/publisher/schemas/posit-publishing-record-schema-v3.json'
 server_type = 'connect'
 server_url = 'https://pub.ferryland.posit.team'
-client_version = '1.1.4'
+client_version = '1.1.5'
 created_at = '2024-07-31T04:17:07Z'
 type = 'quarto'
 configuration_name = 'example-configuration'
 id = 'cc9528d2-aa4f-4b3a-ab54-51c894c5686d'
-deployed_at = '2024-08-07T21:23:35Z'
-bundle_id = '236'
-bundle_url = 'https://pub.ferryland.posit.team/__api__/v1/content/cc9528d2-aa4f-4b3a-ab54-51c894c5686d/bundles/236/download'
+deployed_at = '2024-08-12T03:53:37Z'
+bundle_id = '333'
+bundle_url = 'https://pub.ferryland.posit.team/__api__/v1/content/cc9528d2-aa4f-4b3a-ab54-51c894c5686d/bundles/333/download'
 dashboard_url = 'https://pub.ferryland.posit.team/connect/#/apps/cc9528d2-aa4f-4b3a-ab54-51c894c5686d'
 direct_url = 'https://pub.ferryland.posit.team/content/cc9528d2-aa4f-4b3a-ab54-51c894c5686d'
 files = [
@@ -151,6 +151,7 @@ entrypoint = 'notebook.ipynb'
 validate = true
 files = ['notebook.ipynb', 'requirements.txt']
 title = 'Seattle Ferries #2 - Data exploration and validation'
+description = 'Tidy the ferry data and save tidy data back to the database.'
 
 [configuration.python]
 version = '3.12.3'
