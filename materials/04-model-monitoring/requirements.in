@@ -1,8 +1,13 @@
+adbc-driver-postgresql==1.1.0
+hvplot==0.10.0
+itables==2.1.4
 jupyter==1.0.0
 jupyterlab==4.2.4
 pandas==2.2.2
 pins==0.8.6
 plotly==5.23.0
+polars==1.4.1
 posit-sdk==0.3.1
-scikit-learn==1.5.1
+pyarrow==17.0.0
+scikit-learn==1.5.0
 vetiver==0.2.5
