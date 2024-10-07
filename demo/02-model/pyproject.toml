@@ -1,0 +1,19 @@
+[project]
+name = "02-model"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "duckdb>=1.1.1",
+    "hvplot>=0.11.0",
+    "ipykernel>=6.29.5",
+    "pins>=0.8.6",
+    "polars>=1.9.0",
+    "posit-sdk>=0.5.0",
+    "pyarrow>=17.0.0",
+    "python-dotenv>=1.0.1",
+    "scikit-learn>=1.5.2",
+    "statsmodels>=0.14.4",
+    "vetiver>=0.2.5",
+]
