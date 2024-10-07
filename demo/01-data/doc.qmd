@@ -1,0 +1,739 @@
+---
+title: Reading data
+jupyter: python3
+format:
+    html:
+        toc: true
+---
+
+```{python}
+import datetime
+import os
+import time
+from itertools import product
+from pathlib import Path
+from typing import TypedDict
+
+import duckdb
+import hishel
+import httpx
+import pandera.polars as pa
+import polars as pl
+from dotenv import load_dotenv
+from pandera.engines.polars_engine import Date, DateTime, Int64
+```
+
+```{python}
+if Path(".env").exists():
+    print("Loading .env")
+    load_dotenv(override=True)
+
+motherduck_token = os.environ["motherduck_token"]
+ws_dot_access_code = os.environ["WSDOT_ACCESS_CODE"]
+```
+
+## Description of data
+
+There are 4 data sets that this project requires:
+
+**Vessel History**: <https://www.wsdot.wa.gov/Ferries/API/Vessels/rest/help/operations/GetVesselHistory>
+
+```
+https://www.wsdot.wa.gov/Ferries/API/Vessels/rest/vesselhistory?apiaccesscode={APIACCESSCODE}
+```
+
+**Terminal Locations**: <https://www.wsdot.wa.gov/Ferries/API/terminals/rest/help/operations/GetAllTerminalLocations>
+
+```
+https://www.wsdot.wa.gov/Ferries/API/Terminals/rest/terminallocations?apiaccesscode={APIACCESSCODE}
+```
+
+**Vessel Verbose**: <https://www.wsdot.wa.gov/ferries/api/vessels/rest/help/operations/GetAllVesselVerboseDetails>
+
+```
+https://www.wsdot.wa.gov/Ferries/API/Vessels/rest/vesselverbose?apiaccesscode={APIACCESSCODE}
+```
+
+**Weather data**: <https://open-meteo.com/en/docs/historical-weather-api#start_date=2022-12-01&end_date=2022-12-31&hourly=temperature_2m,precipitation,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=America%2FLos_Angeles>
+
+```
+https://archive-api.open-meteo.com/v1/archive?latitude=47.623651&longitude=122.360291&start_date=2022-12-01&end_date=2022-12-31&hourly=temperature_2m,precipitation,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m&timezone=America%2FLos_Angeles
+```
+
+## Vessel Verbose
+
+### Read raw data
+
+```{python}
+base_url = "https://www.wsdot.wa.gov/Ferries/API/Vessels/rest"
+params = {"apiaccesscode": os.environ["WSDOT_ACCESS_CODE"]}
+
+with httpx.Client(base_url=base_url, params=params) as client:
+    response = client.get("/vesselverbose")
+
+vessel_verbose_raw = pl.DataFrame(response.json())
+vessel_verbose_raw
+```
+
+### Tidy data
+
+```{python}
+def convert_measurement_string_to_inches(series: pl.Series) -> pl.Series:
+    """
+    Convert the measurement string into a float.
+    """
+    feet = series.str.extract(r"(\d+)'").cast(pl.Int64)
+    inches = series.str.extract(r'(\d+)"').cast(pl.Int64).fill_null(0)
+    total_inches = feet * 12 + inches
+    return total_inches
+```
+
+```{python}
+vessel_verbose_tidy = (
+    vessel_verbose_raw
+    # Unnest the Class column to turn from struct into tabular data
+    .unnest("Class")
+    # Drop VessselDrawingImg column, we don't need it.
+    .drop("VesselDrawingImg")
+    # Convert string measurements to numeric values
+    .with_columns(
+        pl.col("Beam", "Length", "Draft")
+        .map_batches(convert_measurement_string_to_inches)
+        .name.suffix("Inches"),
+    )
+    .select(pl.col("*").exclude(["Beam", "Length", "Draft"]))
+    # Fix the year columns
+    .with_columns(
+        pl.col("YearBuilt").cast(pl.String).str.to_date("%Y"),
+        pl.col("YearRebuilt").cast(pl.Int64).cast(pl.String).str.to_date("%Y"),
+    )
+    # Handle missing values for strings
+    .with_columns(
+        pl.col(pl.String).replace(" ", None),
+    )
+    # Normalize string values
+    .with_columns(
+        (
+            pl.col("VesselName", "VesselAbbrev", "ClassName", "CityBuilt", "PropulsionInfo")
+            .str.to_lowercase()
+            .str.strip_chars()
+        )
+    )
+)
+
+vessel_verbose_tidy
+```
+
+### Validate the data
+
+```{python}
+class VesselVerboseSchema(pa.DataFrameModel):
+    VesselID: int
+    VesselSubjectID: int
+    VesselName: str = pa.Field(unique=True)
+    VesselAbbrev: str
+    ClassID: int
+    ClassName: str
+    ClassSubjectID: int
+    DrawingImg: str
+    PublicDisplayName: str
+    SilhouetteImg: str
+    SortSeq: int
+    Status: int
+    OwnedByWSF: bool
+    CarDeckRestroom: bool
+    CarDeckShelter: bool
+    Elevator: bool
+    ADAAccessible: bool
+    MainCabinGalley: bool
+    MainCabinRestroom: bool
+    PublicWifi: bool
+    ADAInfo: str
+    AdditionalInfo: str = pa.Field(nullable=True)
+    VesselNameDesc: str
+    VesselHistory: str = pa.Field(nullable=True)
+    CityBuilt: str
+    SpeedInKnots: int
+    EngineCount: int
+    Horsepower: int
+    MaxPassengerCount: int
+    PassengerOnly: bool
+    FastFerry: bool
+    PropulsionInfo: str
+    TallDeckClearance: int
+    RegDeckSpace: int
+    TallDeckSpace: int
+    Tonnage: int
+    Displacement: int
+    YearBuilt: Date
+    YearRebuilt: Date = pa.Field(nullable=True)
+    SolasCertified: bool
+    MaxPassengerCountForInternational: int = pa.Field(nullable=True)
+    BeamInches: int
+    LengthInches: int
+    DraftInches: int = pa.Field(nullable=True)
+
+    @pa.check("DrawingImg")
+    def validate_urls(cls, data: pa.PolarsData) -> pl.LazyFrame:
+        return data.lazyframe.select(pl.col(data.key).str.starts_with("https://"))
+```
+
+```{python}
+VesselVerboseSchema.validate(vessel_verbose_tidy)
+```
+
+
+### Save to database
+
+DuckDB / MotherDuck setup.
+
+```{python}
+con = duckdb.connect('md:')
+database_name = "washington_ferries"
+con.execute(f"CREATE DATABASE IF NOT EXISTS {database_name}")
+con.execute(f"USE {database_name}")
+```
+
+Save to the database.
+
+```{python}
+table_name = "vessel_verbose"
+con.sql(f'DROP TABLE IF EXISTS {table_name}')
+con.sql(f'CREATE TABLE {table_name} as SELECT * FROM {table_name}_tidy') 
+```
+
+```{python}
+# Confirm you can read the data back
+con.sql(f"SELECT * FROM {table_name}")
+```
+
+## Vessel History
+
+### Read raw data
+
+Get all of the vessel names.
+
+```{python}
+vessel_names = vessel_verbose_raw.get_column("VesselName").to_list()
+vessel_names
+```
+
+Define start and end date ranges.
+
+```{python}
+#| tags: []
+# To speed things up, we will only download a subset of the data.
+start_date = datetime.date.today() - datetime.timedelta(weeks=10)
+
+# Subtract 1 week from today, the Weather API has a 5 day delay.
+end_date = datetime.date.today() - datetime.timedelta(weeks=1)
+
+print(f"{start_date} to {end_date}")
+```
+
+The vessel history data set is large. Instead of httpx, we will use hishel, which has built in easy caching. This is really useful when you are developing, and will prevent you from hitting the API too many times.
+
+```{python}
+storage = hishel.FileStorage(ttl=60 * 60 * 8)
+controller = hishel.Controller(allow_heuristics=True)
+
+cache_transport = hishel.CacheTransport(
+    transport=httpx.HTTPTransport(),
+    controller=controller,
+    storage=storage
+)
+```
+
+```{python}
+# Get the vessel history for each vessel.
+vessel_history_json = []
+
+for vessel_name in vessel_names:
+
+    print(f"Getting vessel history for {vessel_name}...")
+
+    with httpx.Client(base_url=base_url, params=params, transport=cache_transport) as client:
+
+        response = client.get(
+            f"/vesselhistory/{vessel_name}/{start_date}/{end_date}",
+            timeout=30,
+            extensions={"force_cache": True}
+        )
+
+        print(f"\t{len(response.json()):,} records retrieved for {vessel_name}.")
+        print(f"\tCache used: {response.extensions['from_cache']}")
+
+    vessel_history_json += response.json()
+```
+
+
+```{python}
+#| tags: []
+# Convert the data from JSON to a polars DataFrame
+vessel_history_raw = pl.DataFrame(vessel_history_json)
+vessel_history_raw
+```
+
+### Tidy data
+
+```{python}
+def convert_string_to_datetime(series: pl.Series) -> pl.Series:
+    """
+    Convert the datetime format from wadot into a datetime format that polars
+    can understand.
+
+    >>> convert_string_to_datetime(pl.Series(['/Date(1714547700000-0700)/']))
+    shape: (1,)
+    Series: '' [datetime[μs, UTC]]
+    [
+        2024-05-01 07:15:00 UTC
+    ]
+    """
+    # Extract the unix time stamp. To work with polars we need the time
+    # the number of seconds since 1970-01-01 00:00 UTC, so divide by
+    # 1_000.
+    unix_timestamp = (
+        (series.str.extract(r"/Date\((\d{13})[-+]").cast(pl.Int64) / 1_000)
+        .cast(pl.Int64)
+        .cast(pl.String)
+    )
+    # Extract the timezone.
+    timezone = series.str.extract(r"([-+]\d{4})")
+    # Create a new series that has the timestamp and timezone.
+    clean_timestamp = unix_timestamp + timezone
+    # Convert into a datetime.
+    datetime_series = clean_timestamp.str.to_datetime("%s%z")
+    return datetime_series
+```
+
+```{python}
+# Correct the names of the "Departing" and "Arriving" terminals so that they match the values in the `terminal_locations` data set.
+terminal_name_mapping = {
+    "anacortes": "anacortes",
+    "bainbridge": "bainbridge island",
+    "bremerton": "bremerton",
+    "clinton": "clinton",
+    "colman": "seattle",
+    "edmonds": "edmonds",
+    "fauntleroy": "fauntleroy",
+    "friday harbor": "friday harbor",
+    "keystone": "coupeville",
+    "kingston": "kingston",
+    "lopez": "lopez island",
+    "mukilteo": "mukilteo",
+    "orcas": "orcas island",
+    "port townsend": "port townsend",
+    "pt. defiance": "point defiance",
+    "shaw": "shaw island",
+    "sidney b. c.": "sidney b.c.",
+    "southworth": "southworth",
+    "tahlequah": "tahlequah",
+    "vashon": "vashon island",
+}
+
+terminal_name_mapping_df = pl.DataFrame(
+    {
+        "OldName": terminal_name_mapping.keys(),
+        "CorrectName": terminal_name_mapping.values(),
+    }
+)
+
+terminal_name_mapping_df
+```
+
+```{python}
+vessel_history_tidy = (
+    vessel_history_raw
+    # Fix dates
+    .with_columns(
+        (
+            pl.col("ScheduledDepart", "ActualDepart", "EstArrival", "Date").map_batches(
+                convert_string_to_datetime
+            )
+        )
+    )
+    # Normalize string values
+    .with_columns(
+        pl.col("Vessel", "Departing", "Arriving").str.to_lowercase().str.strip_chars()
+    )
+    # It was identified that many rows have no "Arriving" terminal, or "EstArrival" date. We will assume that it means these ferries were cancelled and drop these rows.
+    .filter(
+        pl.col("Arriving").is_not_null(),
+        pl.col("EstArrival").is_not_null()
+    )
+    # Fix the terminal names
+    .join(
+        terminal_name_mapping_df,
+        left_on="Departing",
+        right_on="OldName",
+        how="left",
+        validate="m:1",
+        coalesce=True
+    )
+    .rename({"CorrectName": "DepartingCorrected"})
+    .join(
+        terminal_name_mapping_df,
+        left_on="Arriving",
+        right_on="OldName",
+        how="left",
+        validate="m:1",
+        coalesce=True
+    )
+    .rename({"CorrectName": "ArrivingCorrected"})
+    .drop(["Departing", "Arriving"])
+    .rename({"DepartingCorrected": "Departing", "ArrivingCorrected": "Arriving"})
+    .select(
+        [
+            "VesselId",
+            "Vessel",
+            "Departing",
+            "Arriving",
+            "ScheduledDepart",
+            "ActualDepart",
+            "EstArrival",
+            "Date",
+        ]
+    )
+    # It was identified that the VesselId column cannot be used for joins. Since it is not useful we should drop it to avoid confusion.
+    .drop("VesselId")
+)
+
+vessel_history_tidy
+```
+
+### Validate the data
+
+```{python}
+class VesselHistorySchema(pa.DataFrameModel):
+    Vessel: str
+    Departing: str
+    Arriving: str
+    ScheduledDepart: DateTime = pa.Field(dtype_kwargs={"time_zone": "UTC"})
+    ActualDepart: DateTime = pa.Field(dtype_kwargs={"time_zone": "UTC"})
+    EstArrival: DateTime = pa.Field(dtype_kwargs={"time_zone": "UTC"})
+    Date: DateTime = pa.Field(
+        dtype_kwargs={"time_zone": "UTC"},
+        ge=pl.datetime(2024, 3, 1, time_zone="America/Vancouver").dt.convert_time_zone(
+            "UTC"
+        ),
+    )
+
+    @pa.dataframe_check
+    def year_of_date_matches_scheduled_depart(cls, df: pa.PolarsData) -> pl.LazyFrame:
+        """
+        Verify that the year of the Date column matches the year of the
+        ScheduledDepart column.
+        """
+        return df.lazyframe.select(
+            pl.col("Date").dt.year().eq(pl.col("ScheduledDepart").dt.year())
+        )
+
+    @pa.dataframe_check(raise_warning=True)
+    def estimated_arrival_is_after_scheduled_depart(
+        cls, df: pa.PolarsData
+    ) -> pl.LazyFrame:
+        """
+        Verify that the EstArrival date time is always after the ScheduledDepart
+        date time.
+
+        Note this check is expected to fail, therefore raise_warning=True is
+        used. In the future we should go back and understand why this check
+        fails.
+        """
+        return df.lazyframe.select(pl.col("EstArrival").ge(pl.col("ScheduledDepart")))
+
+    @pa.check("Vessel")
+    def vessel_in_vessel_verbose_data_set(cls, data: pa.PolarsData) -> pl.LazyFrame:
+        """
+        Verify that all of the vessels in the vessel history data set also exist
+        in the vessel verbose data set.
+
+        Note this check is expected to fail, therefore raise_warning=True is
+        used. In the future we should go back and understand why this check
+        fails.
+
+        """
+        vessel_names = vessel_verbose_tidy.get_column("VesselName").to_list()
+        return data.lazyframe.select(pl.col(data.key).is_in(vessel_names))
+```
+
+```{python}
+VesselHistorySchema.validate(vessel_history_tidy)
+```
+
+### Save to database
+
+```{python}
+table_name = "vessel_history"
+con.sql(f'DROP TABLE IF EXISTS {table_name}')
+con.sql(f'CREATE TABLE {table_name} as SELECT * FROM {table_name}_tidy') 
+```
+
+```{python}
+# Confirm you can read the data back
+con.sql(f"SELECT * FROM {table_name}")
+```
+
+## Terminal Locations
+
+### Read raw data
+
+```{python}
+#| tags: []
+# Get all of the terminal location data
+base_url = "https://www.wsdot.wa.gov/Ferries/API/terminals/rest"
+params = {"apiaccesscode": os.environ["WSDOT_ACCESS_CODE"]}
+
+with httpx.Client(base_url=base_url, params=params) as client:
+    response = client.get("/terminallocations")
+```
+
+```{python}
+#| tags: []
+# List all of the terminal names
+{terminal["TerminalName"]: terminal["TerminalAbbrev"] for terminal in response.json()}
+```
+
+```{python}
+#| tags: []
+terminal_locations_raw = pl.DataFrame(response.json())
+terminal_locations_raw
+```
+
+### Tidy data
+
+Before saving to the database drop the `DispGISZoomLoc` column which we will not need and is not in a format supported by the database.
+
+```{python}
+terminal_locations_tidy = (
+    terminal_locations_raw
+    # Normalize string values and only keep the columns we need.
+    .select(
+        pl.col("TerminalName").str.to_lowercase().str.strip_chars(),
+        pl.col("TerminalAbbrev").str.to_uppercase().str.strip_chars(),
+        pl.col("Latitude"),
+        pl.col("Longitude"),
+    )
+)
+
+terminal_locations_tidy
+```
+
+### Validate the data
+
+```{python}
+class TerminalLocationsSchema(pa.DataFrameModel):
+    TerminalName: str = pa.Field(unique=True)
+    TerminalAbbrev: str
+    Latitude: float = pa.Field(ge=-90.0, le=90.0)
+    Longitude: float = pa.Field(ge=-180.0, le=180.0)
+```
+
+```{python}
+TerminalLocationsSchema.validate(terminal_locations_tidy)
+```
+
+### Save to database
+
+```{python}
+table_name = "terminal_locations"
+con.sql(f'DROP TABLE IF EXISTS {table_name}')
+con.sql(f'CREATE TABLE {table_name} as SELECT * FROM {table_name}_tidy') 
+```
+
+```{python}
+# Confirm you can read the data back
+con.sql(f"SELECT * FROM {table_name}")
+```
+
+
+## Terminal Weather
+
+### Read raw data
+
+Get the weather data from <https://open-meteo.com/en/docs>. Here is an example URL:
+
+`https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&hourly=temperature_2m,precipitation,cloud_cover,visibility,wind_speed_10m`
+
+First, generate a list of date ranges. If we should provide the entire date range the API call will take a really long time and is more likely to time out. So instead we should break up the API call into many smaller chunks.
+
+```{python}
+#| tags: []
+# Get a list of of date ranges, starting from start_date.
+_start_date = start_date
+_end_date = _start_date + datetime.timedelta(weeks=4)
+date_ranges = [(start_date, _end_date)]
+
+while True:
+    _start_date = _end_date + datetime.timedelta(days=1)
+    _end_date = min(_start_date + datetime.timedelta(weeks=4), end_date)
+    date_ranges.append((_start_date, _end_date))
+
+    if _end_date == end_date:
+        break
+
+date_ranges
+```
+
+Iterate over each date range, and each terminal location, saving the weather data. All of the data will be saved to the `json_data` variable.
+
+```{python}
+base_url = "https://archive-api.open-meteo.com/v1/"
+
+
+class WeatherParams(TypedDict):
+    hourly: list[str]
+    latitude: float
+    longitude: float
+    start_date: datetime.date
+    end_date: datetime.date
+
+
+json_data = []
+
+with httpx.Client(base_url=base_url, transport=cache_transport) as client:
+
+    for terminal, date_range in product(
+        terminal_locations_raw.select("Latitude", "Longitude", "TerminalName").to_dicts(),
+        date_ranges
+    ):
+
+        params: WeatherParams = {
+            "hourly": [
+                "weather_code",
+                "temperature_2m",
+                "precipitation",
+                "cloud_cover",
+                "wind_speed_10m",
+                "wind_direction_10m",
+                "wind_gusts_10m",
+            ],
+            "start_date": date_range[0],
+            "end_date": date_range[1],
+            "latitude": round(terminal["Latitude"], 2),
+            "longitude": round(terminal["Longitude"], 2),
+        }
+
+        print(" ".join([
+            f'Getting records for: {terminal["TerminalName"]} <>',
+            f'{params["latitude"]}, {params["longitude"]} <>',
+            f'{params["start_date"]} to {params["end_date"]}...'
+        ]))
+
+        response = client.get("/archive", params=params, extensions={"force_cache": True})
+
+        try:
+            print(f"\t{response}")
+            print(f"\tfound {len(response.json()):,} records")
+            print(f"\tFrom cache: {response.extensions['from_cache']}")
+            response.raise_for_status()
+            _json_data = response.json()
+            _json_data["terminal_name"] = terminal["TerminalName"]
+            json_data.append(_json_data)
+
+        except httpx.HTTPStatusError as exc:
+            if response.status_code == 429:
+                print("\tRate limit exceeded. Waiting 60 seconds...")
+                time.sleep(60)
+                response = client.get("/forecast", params=params)
+                print(f"\t{response}")
+                print(f"\tfound {len(response.json()):,} records")
+                print(f"\tFrom cache: {response.extensions['from_cache']}")
+                response.raise_for_status()
+                _json_data = response.json()
+                _json_data["terminal_name"] = terminal["TerminalName"]
+                json_data.append(_json_data)
+            else:
+                raise exc
+```
+
+Hishel was used for caching again. Re-run the above code chunk and note how much faster it executes. Then, convert the JSON data into a polars DataFrame.
+
+```{python}
+terminal_weather_raw = pl.DataFrame(json_data)
+terminal_weather_raw
+```
+
+### Tidy data
+
+```{python}
+terminal_weather_tidy = (
+    terminal_weather_raw
+    # Unnest the hourly column to get the data into a table format
+    .unnest("hourly")
+    .explode(
+        "time",
+        "weather_code",
+        "temperature_2m",
+        "precipitation",
+        "cloud_cover",
+        "wind_speed_10m",
+        "wind_direction_10m",
+        "wind_gusts_10m",
+    )
+    # Drop the hourly_units field, they may not write to the database correctly and we do not need it.
+    .select(pl.col("*").exclude("hourly_units"))
+    # Normalize string values
+    .with_columns(
+        pl.col("timezone").str.to_lowercase().str.strip_chars(),
+        pl.col("timezone_abbreviation").str.to_lowercase().str.strip_chars(),
+        pl.col("terminal_name").str.to_lowercase().str.strip_chars(),
+    )
+    # Normalize dates
+    .with_columns(
+        pl.col("time").str.to_datetime(time_zone="GMT")
+    )
+)
+
+terminal_weather_tidy
+```
+
+### Validate the data
+
+```{python}
+class TerminalWeatherSchema(pa.DataFrameModel):
+    latitude: float = pa.Field(ge=-90.0, le=90.0)
+    longitude: float = pa.Field(ge=-180.0, le=180.0)
+    generationtime_ms: float
+    utc_offset_seconds: int
+    timezone: str = pa.Field(eq="gmt")
+    timezone_abbreviation: str = pa.Field(eq="gmt")
+    elevation: float
+    time: DateTime = pa.Field(dtype_kwargs={"time_zone": "GMT"}, nullable=True)
+    weather_code: int
+    temperature_2m: float
+    precipitation: float
+    cloud_cover: int = pa.Field(ge=0, le=100)
+    wind_speed_10m: float
+    wind_direction_10m: int = pa.Field(ge=0, le=360)
+    wind_gusts_10m: float
+    terminal_name: str
+```
+
+```{python}
+TerminalWeatherSchema.validate(terminal_weather_tidy)
+```
+
+### Save to database
+
+```{python}
+table_name = "terminal_weather"
+con.sql(f'DROP TABLE IF EXISTS {table_name}')
+con.sql(f'CREATE TABLE {table_name} as SELECT * FROM {table_name}_tidy') 
+```
+
+```{python}
+# Confirm you can read the data back
+con.sql(f"SELECT * FROM {table_name}")
+```
+
+## End of script
+
+```{python}
+con.close()
+```
+
+```{python}
+print("✅ Complete")
+```
+

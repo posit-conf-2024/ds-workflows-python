@@ -1,0 +1,12 @@
+{
+    "https://pub.current.posit.team/": {
+        "server_url": "https://pub.current.posit.team/",
+        "filename": "/Users/samedwardes/projects/posit/ds-workflows-python-2024/demo/02-model/api",
+        "app_url": "https://pub.current.posit.team/content/86df3257-81ca-432e-a34d-e838a9f44da1/",
+        "app_id": "86df3257-81ca-432e-a34d-e838a9f44da1",
+        "app_guid": "86df3257-81ca-432e-a34d-e838a9f44da1",
+        "title": "sam.edwardes@posit.co/ferry_delay_vetiver",
+        "app_mode": "python-fastapi",
+        "app_store_version": 1
+    }
+}
