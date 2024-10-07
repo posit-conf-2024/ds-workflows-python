@@ -10,9 +10,9 @@ id = '1fe0939c-b5cc-4a01-aabd-16015f833d12'
 dashboard_url = 'https://pub.current.posit.team/connect/#/apps/1fe0939c-b5cc-4a01-aabd-16015f833d12'
 direct_url = 'https://pub.current.posit.team/content/1fe0939c-b5cc-4a01-aabd-16015f833d12/'
 logs_url = 'https://pub.current.posit.team/connect/#/apps/1fe0939c-b5cc-4a01-aabd-16015f833d12/logs'
-deployed_at = '2024-10-07T16:32:37-07:00'
-bundle_id = '568'
-bundle_url = 'https://pub.current.posit.team/__api__/v1/content/1fe0939c-b5cc-4a01-aabd-16015f833d12/bundles/568/download'
+deployed_at = '2024-10-07T16:44:11-07:00'
+bundle_id = '569'
+bundle_url = 'https://pub.current.posit.team/__api__/v1/content/1fe0939c-b5cc-4a01-aabd-16015f833d12/bundles/569/download'
 files = [
   'app.py',
   'requirements.txt',
@@ -42,8 +42,10 @@ requirements = [
   'duckdb==1.1.1',
   'executing==2.1.0',
   'great-tables==0.13.0',
-  "h11==0.14.0 ; platform_system != 'Emscripten'",
+  'h11==0.14.0',
   'htmltools==0.5.3',
+  'httpcore==1.0.6',
+  'httpx==0.27.2',
   'ibis-framework==9.5.0',
   'idna==3.10',
   'importlib-metadata==8.5.0',
@@ -81,6 +83,7 @@ requirements = [
   "ptyprocess==0.7.0 ; sys_platform != 'win32'",
   'pure-eval==0.2.3',
   'pyarrow==17.0.0',
+  'pyarrow-hotfix==0.6',
   "pycparser==2.22 ; implementation_name == 'pypy'",
   'pygments==2.18.0',
   'python-dateutil==2.9.0.post0',
@@ -91,6 +94,7 @@ requirements = [
   'pyzmq==26.2.0',
   "questionary==2.0.1 ; platform_system != 'Emscripten'",
   'requests==2.32.3',
+  'rich==13.9.2',
   "setuptools==75.1.0 ; python_full_version >= '3.12'",
   'shiny==1.1.0',
   'shinywidgets==0.3.3',
